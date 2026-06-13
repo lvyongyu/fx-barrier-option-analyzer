@@ -18,6 +18,7 @@ from src.repository import (
     upsert_market_prices,
 )
 from src.reporting import format_summary
+from src.training_dataset import build_price_only_training_dataset
 from src.volatility_adjustment import calculate_volatility_adjusted_probability
 
 
@@ -38,6 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--barrier-level-period", default="continuous")
     parser.add_argument("--expiry-time-zone", default="Tokyo")
     parser.add_argument("--save-db", help="optional SQLite path for saving research data")
+    parser.add_argument("--export-training-dataset", help="optional CSV path for exporting price-only training data")
     parser.add_argument("--json", action="store_true", help="print raw JSON instead of a readable summary")
     return parser.parse_args()
 
@@ -88,6 +90,15 @@ def main() -> None:
                 "analysis_result_id": analysis_result_id,
                 "volatility_adjustment_id": volatility_adjustment_id,
             }
+    exported_training_dataset = None
+    if args.export_training_dataset:
+        training_dataset = build_price_only_training_dataset(trade, prices)
+        training_dataset.to_csv(args.export_training_dataset, index=False)
+        exported_training_dataset = {
+            "path": args.export_training_dataset,
+            "rows": len(training_dataset),
+            "columns": list(training_dataset.columns),
+        }
     if args.json:
         print(
             json.dumps(
@@ -96,6 +107,7 @@ def main() -> None:
                     "features": asdict(features),
                     "volatility_adjustment": asdict(volatility_adjustment),
                     "saved_ids": saved_ids,
+                    "exported_training_dataset": exported_training_dataset,
                 },
                 default=str,
                 indent=2,

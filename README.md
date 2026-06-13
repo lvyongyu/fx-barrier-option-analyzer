@@ -137,6 +137,34 @@ The research database stores:
 - `analysis_results`
 - `volatility_adjustments`
 
+Export a price-only training dataset for the future model:
+
+```bash
+python -m src.analyze \
+  --product-type "Ratio Convertible Forward" \
+  --client-direction Importer \
+  --protected-amount 500000 \
+  --ratio-amount 1000000 \
+  --amount-currency USD \
+  --trade-date 2026-04-15 \
+  --expiry-date 2026-12-30 \
+  --spot 0.6800 \
+  --strike 0.6850 \
+  --barrier 0.6935 \
+  --barrier-direction up \
+  --period 2y \
+  --export-training-dataset data/training_price_only.csv
+```
+
+The training dataset contains one row per synthetic historical trade date:
+
+```text
+price-derived features as of that date
+target_barrier_hit over the forward expiry window
+```
+
+Features are calculated using only data available on or before each synthetic trade date.
+
 ## Calculation Summary
 
 For the target trade:

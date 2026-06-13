@@ -180,6 +180,7 @@ Train the first probability model for `BarrierHitBeforeExpiry` using AUD/USD pri
 Deliverables:
 
 - Historical training dataset.
+- Price-only training dataset export.
 - Walk-forward validation.
 - Calibrated model probability.
 - Model evaluation report.
@@ -199,6 +200,7 @@ Required metrics:
 
 Exit criteria:
 
+- Training dataset contains features and `target_barrier_hit` labels without look-ahead leakage.
 - Model beats or usefully complements baseline out of sample.
 - Feature leakage checks pass.
 - CLI output clearly labels model probability versus baseline probability.
@@ -320,7 +322,7 @@ Exit criteria:
 Build Phase 5:
 
 ```text
-price-only probability model
+price-only probability model training
 walk-forward validation
 comparison against historical baseline and volatility-adjusted estimate
 ```
