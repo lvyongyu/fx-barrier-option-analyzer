@@ -7,6 +7,7 @@ import json
 
 from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import download_audusd_prices
+from src.reporting import format_summary
 
 
 def parse_args() -> argparse.Namespace:
@@ -18,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--strike", required=True, type=float)
     parser.add_argument("--barrier", required=True, type=float)
     parser.add_argument("--barrier-direction", default="up", choices=["up", "down"])
+    parser.add_argument("--json", action="store_true", help="print raw JSON instead of a readable summary")
     return parser.parse_args()
 
 
@@ -34,7 +36,10 @@ def main() -> None:
         barrier_direction=args.barrier_direction,
     )
     result = calculate_touch_probability(trade, prices)
-    print(json.dumps(asdict(result), default=str, indent=2))
+    if args.json:
+        print(json.dumps(asdict(result), default=str, indent=2))
+    else:
+        print(format_summary(result))
 
 
 if __name__ == "__main__":

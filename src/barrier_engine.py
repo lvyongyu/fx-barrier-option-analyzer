@@ -19,6 +19,8 @@ class Trade:
 
 @dataclass(frozen=True)
 class BarrierPathResult:
+    is_applicable: bool
+    reason: str | None
     barrier_hit: bool
     hit_date: date | None
     max_high: float | None
@@ -88,20 +90,63 @@ def normalize_prices(prices: pd.DataFrame, pair: str | None = None) -> pd.DataFr
 def evaluate_actual_path(trade: Trade, prices: pd.DataFrame) -> BarrierPathResult:
     direction = normalize_direction(trade.barrier_direction)
     frame = normalize_prices(prices, trade.pair)
+    first_available_date = frame["date"].min()
+    last_available_date = frame["date"].max()
+
+    if trade.trade_date < first_available_date:
+        return BarrierPathResult(
+            is_applicable=False,
+            reason=f"trade_date is before available market data ({first_available_date})",
+            barrier_hit=False,
+            hit_date=None,
+            max_high=None,
+            min_low=None,
+            days_to_hit=None,
+        )
+
+    if trade.expiry_date > last_available_date:
+        return BarrierPathResult(
+            is_applicable=False,
+            reason=f"expiry_date is after available market data ({last_available_date})",
+            barrier_hit=False,
+            hit_date=None,
+            max_high=None,
+            min_low=None,
+            days_to_hit=None,
+        )
+
     window = frame[(frame["date"] >= trade.trade_date) & (frame["date"] <= trade.expiry_date)]
 
     if window.empty:
-        return BarrierPathResult(False, None, None, None, None)
+        return BarrierPathResult(
+            is_applicable=False,
+            reason="no market data inside trade window",
+            barrier_hit=False,
+            hit_date=None,
+            max_high=None,
+            min_low=None,
+            days_to_hit=None,
+        )
 
     max_high = float(window["high"].max())
     min_low = float(window["low"].min())
     hits = window[window["high"] >= trade.barrier] if direction == "up" else window[window["low"] <= trade.barrier]
 
     if hits.empty:
-        return BarrierPathResult(False, None, max_high, min_low, None)
+        return BarrierPathResult(
+            is_applicable=True,
+            reason=None,
+            barrier_hit=False,
+            hit_date=None,
+            max_high=max_high,
+            min_low=min_low,
+            days_to_hit=None,
+        )
 
     hit_date = hits.iloc[0]["date"]
     return BarrierPathResult(
+        is_applicable=True,
+        reason=None,
         barrier_hit=True,
         hit_date=hit_date,
         max_high=max_high,

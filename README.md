@@ -44,6 +44,20 @@ The default market data source is:
 yfinance.download("AUDUSD=X", period="2y")
 ```
 
+By default, the CLI prints a readable summary. Add `--json` if you want the raw structured result:
+
+```bash
+python -m src.analyze \
+  --trade-date 2026-04-15 \
+  --expiry-date 2026-08-28 \
+  --spot 0.6500 \
+  --strike 0.6900 \
+  --barrier 0.7050 \
+  --barrier-direction up \
+  --period 2y \
+  --json
+```
+
 ## Calculation Summary
 
 For the target trade:
