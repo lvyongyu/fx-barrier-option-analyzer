@@ -252,12 +252,45 @@ Recommended staged outputs:
 ```text
 Historical baseline probability
 Volatility-adjusted probability
+Barrier-theory probability
 Regime-adjusted probability
 Model probability
 Confidence / data-quality notes
 ```
 
 The system should avoid pretending that historical frequency alone is a complete future forecast.
+
+### Barrier-Theory Baseline
+
+The next probability layer should be a reproducible theoretical touch estimate, not another generic classifier.
+
+For an FX barrier event, the model should explicitly account for:
+
+```text
+spot
+barrier
+barrier direction
+days to expiry
+realized volatility
+expected move to expiry
+distance in volatility units
+```
+
+A first implementation can use driftless Geometric Brownian Motion, either through a closed-form approximation or a deterministic simulation. This gives the analyzer a transparent benchmark for path probability:
+
+```text
+P(min_path <= down_barrier before expiry)
+P(max_path >= up_barrier before expiry)
+```
+
+This barrier-theory probability should be evaluated against:
+
+- Historical baseline probability.
+- Volatility-adjusted probability.
+- Price-only logistic model.
+- Price + external-feature model.
+
+If the barrier-theory estimate is useful, later ML should calibrate or blend it rather than relearn barrier math from scratch.
 
 ## 7. Data Requirements
 
@@ -524,6 +557,19 @@ Validation approach:
 - Avoid look-ahead leakage.
 - Generate historical features using only information available as of each synthetic trade date.
 - Compare every model against the baseline historical probability.
+- Compare models across generated near/medium/far up/down sample trades, not only one confirmation example.
+- Treat positive `dBrier` as the first sign of model usefulness.
+- Require calibration buckets to be directionally sensible before trusting a model probability.
+
+Current findings:
+
+- The initial logistic models generally do not beat the historical baseline across the sample-trade batch.
+- DXY/VIX external features have not improved the current batch evaluation.
+- An external institutional-style report produced a plausible 76% down-barrier probability for AUD/USD below 0.6908, but its simulation and calibration details are not fully auditable.
+
+Design implication:
+
+The next model step is a transparent GBM/barrier-theory baseline. UI, API, and additional external features should wait until this probability layer is implemented and evaluated.
 
 ## 14. Known Limitations
 
@@ -532,8 +578,9 @@ Validation approach:
 - Historical probability assumes future behavior resembles historical behavior.
 - Volatility and macro features may still fail during regime breaks.
 - Daily OHLC data may miss intraday sequencing around barriers.
-- No volatility regime adjustment in MVP.
-- No macro, news, or implied-volatility inputs in MVP.
+- The current logistic model is experimental and should not be trusted unless it beats baseline metrics.
+- DXY/VIX are experimental context features, not proven predictive features.
+- No macro, news, or implied-volatility inputs are trusted as core probability drivers yet.
 - No option pricing or payoff modeling in MVP.
 
 ## 15. Design Principles
@@ -541,7 +588,8 @@ Validation approach:
 - Prioritize calculation correctness over UI.
 - Keep the first version auditable.
 - Treat historical baseline as the benchmark, not the endpoint.
+- Prefer transparent market/math baselines before complex ML.
 - Move toward forward-looking probability estimation through measurable feature improvements.
-- Avoid machine learning until the target-label generation and baseline are trusted.
+- Avoid expanding ML until target-label generation, barrier-theory baseline, and calibration are trusted.
 - Every probability should identify its method: baseline, volatility-adjusted, or model-based.
 - Do not mix explanatory LLM output with probability generation.

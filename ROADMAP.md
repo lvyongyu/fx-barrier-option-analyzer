@@ -207,7 +207,57 @@ Exit criteria:
 - Status: experimental logistic regression complete with walk-forward Brier/log-loss and calibration buckets.
 - Status: model evaluation report can compare 2y/5y/10y windows before trusting model output.
 - Status: batch evaluation can compare generated near/medium/far up/down sample trades.
-- Next: use batch reports to decide whether the price-only model is useful or should be redesigned.
+- Finding: current logistic models generally do not beat the historical baseline across sample trades.
+- Next: redesign the model around a barrier-theory baseline before adding UI.
+
+## Phase 5.5 - Barrier-Theory Baseline
+
+Goal:
+
+Add a reproducible theoretical barrier-touch probability that is closer to the structure of the problem than a generic classifier.
+
+Motivation:
+
+An external institutional-style forecast for the June 11, 2026 to September 11, 2026 AUD/USD downside bucket estimated a 76% probability that the daily low would fall below 0.6908. Reproducing the same style of question locally showed:
+
+- 5y historical touch probability near 76% when using the latest yfinance spot around 0.7049.
+- 5y historical touch probability near 84% when using the report's lower starting spot around 0.7007.
+- Simple driftless GBM touch estimates in the 57-73% range depending on spot and volatility.
+
+This suggests the next model layer should be an auditable barrier-theory estimate, not another generic ML feature set.
+
+Deliverables:
+
+- Closed-form or simulation-based GBM barrier-touch probability.
+- Inputs:
+  - spot
+  - barrier
+  - barrier direction
+  - days to expiry
+  - realized volatility, initially 20d and 60d
+  - optional drift, defaulting to zero
+- Derived features:
+  - expected move to expiry
+  - distance in volatility units
+  - barrier z-score
+- Batch report columns:
+  - GBM probability
+  - GBM Brier score
+  - GBM dBrier versus historical baseline
+  - calibrated blend probability, if useful
+
+Exit criteria:
+
+- GBM probability is deterministic and reproducible.
+- Tests cover up and down barriers, near/far barriers, low/high volatility, and zero-drift behavior.
+- Batch evaluation shows whether GBM improves over baseline across sample trades.
+- If GBM beats or complements baseline, use it as the anchor for the next calibration model.
+- If GBM fails, revisit label design and data window construction before adding more features.
+
+Status:
+
+- Planned next.
+- UI remains deferred until probability methods are more credible.
 
 ## Phase 6 - External Market Features
 
@@ -232,13 +282,18 @@ Exit criteria:
 - Status: DXY/VIX snapshots are available and can be included in a price + external model comparison.
 - Status: evaluation report compares price-only versus price + external models across multiple historical windows.
 - Status: batch evaluation compares price-only versus price + external models across generated sample trades.
-- Next: evaluate whether DXY/VIX improves calibration on longer history before adding more external features.
+- Finding: DXY/VIX did not improve the current sample-trade batch evaluation.
+- Next: pause additional external features until the GBM/barrier-theory baseline is implemented.
 
 ## Phase 7 - Minimal UI
 
 Goal:
 
 Make the tool usable without command-line work.
+
+Current priority:
+
+UI is deferred. The next priority is improving the probability engine and model evaluation layer.
 
 Recommended UI:
 

@@ -1,8 +1,8 @@
 # FX Barrier Option Analyzer
 
-Phase 1 is intentionally small: download AUD/USD daily OHLC data from Yahoo Finance and calculate historical barrier-touch probability.
+The project estimates whether AUD/USD will touch an FX barrier before expiry.
 
-No UI, database, or API yet.
+Current focus: improve the probability engine and model evaluation. UI and API work are intentionally deferred.
 
 ## Requirements
 
@@ -292,6 +292,40 @@ python -m src.evaluation_report --sample-trades --periods 5y
 
 The batch report shows which trade types, if any, have positive model `dBrier`.
 Positive `dBrier` means the model beat the historical baseline on walk-forward Brier score.
+
+## External Forecast Comparison
+
+An external institutional-style forecast for June 11, 2026 to September 11, 2026 estimated:
+
+```text
+Daily lowest AUD/USD < 0.6908: 76%
+Daily lowest AUD/USD 0.6908 to 0.696: 12%
+Daily lowest AUD/USD >= 0.696: 12%
+```
+
+This is equivalent to a down-barrier touch probability question. A quick local comparison showed:
+
+```text
+Using spot 0.7049 and barrier 0.6908:
+5y historical touch probability ~= 76.44%
+
+Using spot 0.7007 and barrier 0.6908:
+5y historical touch probability ~= 84.45%
+```
+
+Simple driftless GBM estimates were lower, roughly 57-73% depending on spot and realized volatility.
+
+Conclusion: the external forecast is directionally reasonable, but the report is not fully auditable because it does not disclose enough simulation and calibration detail. The next project phase is therefore a reproducible barrier-theory baseline:
+
+```text
+GBM touch probability
+distance in volatility units
+expected move to expiry
+barrier z-score
+GBM dBrier in batch evaluation
+```
+
+The goal is not to copy the external forecast. The goal is to build a transparent version that can be tested against historical outcomes.
 
 ## Calculation Summary
 
