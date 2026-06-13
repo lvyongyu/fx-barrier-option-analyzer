@@ -30,6 +30,8 @@ def format_summary(
             f"Spot: {result.spot:.4f}",
             f"Strike: {result.strike:.4f}",
             f"Barrier: {result.barrier:.4f}",
+            f"Barrier direction: {_direction_label(result)}",
+            f"Touch rule: {_touch_rule(result)}",
             f"Barrier period: {result.barrier_level_period}",
             f"Distance to barrier: {result.distance_pct:.2f}%",
             f"Days to expiry: {result.days_to_expiry}",
@@ -169,6 +171,8 @@ def format_forecast_report(
             f"Strike: {result.strike:.4f}",
             f"Barrier: {result.barrier:.4f}",
             f"Direction: {_direction_label(result)}",
+            f"Touch rule: {_touch_rule(result)}",
+            f"Market move tested: {_market_move_tested(result)}",
             f"Distance to barrier: {abs(result.distance_pct):.2f}%",
             f"Days to expiry: {result.days_to_expiry}",
             "",
@@ -345,6 +349,18 @@ def _primary_touch_probability(
 
 def _direction_label(result: TouchProbabilityResult) -> str:
     return result.barrier_direction
+
+
+def _touch_rule(result: TouchProbabilityResult) -> str:
+    if result.barrier_direction == "down":
+        return f"daily low <= {result.barrier:.4f}"
+    return f"daily high >= {result.barrier:.4f}"
+
+
+def _market_move_tested(result: TouchProbabilityResult) -> str:
+    if result.barrier_direction == "down":
+        return "AUD/USD falls to or below the barrier"
+    return "AUD/USD rises to or above the barrier"
 
 
 def _most_likely_outcome(probability: float | None) -> str:

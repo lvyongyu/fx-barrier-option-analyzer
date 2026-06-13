@@ -194,7 +194,7 @@ Required inputs:
 - `expiry_date`
 - `strike`
 - `barrier`
-- `barrier_direction`
+- `barrier_direction`: price direction being tested. Use `up` for daily high >= barrier, and `down` for daily low <= barrier.
 
 Optional inputs:
 

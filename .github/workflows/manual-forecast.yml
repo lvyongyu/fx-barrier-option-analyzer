@@ -16,7 +16,7 @@ on:
         required: true
         default: "0.6935"
       barrier_direction:
-        description: "Barrier direction: up or down"
+        description: "Price direction to test: up = daily high >= barrier, down = daily low <= barrier"
         required: true
         default: "up"
       trade_date:

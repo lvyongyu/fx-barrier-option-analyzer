@@ -65,6 +65,8 @@ def test_format_summary_includes_ratio_convertible_forward_fields() -> None:
     assert "Product: Ratio Convertible Forward" in summary
     assert "Client direction: Importer" in summary
     assert "Strike: 0.6850" in summary
+    assert "Barrier direction: up" in summary
+    assert "Touch rule: daily high >= 0.7050" in summary
     assert "Barrier period: continuous" in summary
     assert "Protected amount: 500,000 USD" in summary
     assert "Ratio amount: 1,000,000 USD" in summary
@@ -257,6 +259,8 @@ def test_format_forecast_report_uses_institutional_style_sections() -> None:
     assert "QUESTION" in report
     assert "PROBABILITY DISTRIBUTION" in report
     assert "Barrier touched before expiry: 68.00%" in report
+    assert "Touch rule: daily high >= 0.7050" in report
+    assert "Market move tested: AUD/USD rises to or above the barrier" in report
     assert "MOST LIKELY OUTCOME" in report
     assert "REFERENCE ESTIMATES" in report
     assert "TOUCH-SUPPORTING FACTORS" in report
@@ -264,22 +268,52 @@ def test_format_forecast_report_uses_institutional_style_sections() -> None:
     assert "MODEL RISK NOTES" in report
 
 
-def result_with_path(actual_path: BarrierPathResult) -> TouchProbabilityResult:
+def test_format_forecast_report_explains_downside_barrier_rule() -> None:
+    result = result_with_path(
+        BarrierPathResult(
+            is_applicable=False,
+            reason="expiry_date is after available market data (2026-06-12)",
+            barrier_hit=False,
+            hit_date=None,
+            max_high=None,
+            min_low=None,
+            days_to_hit=None,
+        ),
+        barrier_direction="down",
+        spot=0.7050,
+        barrier=0.6935,
+        distance_pct=-1.6312,
+    )
+
+    report = format_forecast_report(result)
+
+    assert "Direction: down" in report
+    assert "Touch rule: daily low <= 0.6935" in report
+    assert "Market move tested: AUD/USD falls to or below the barrier" in report
+
+
+def result_with_path(
+    actual_path: BarrierPathResult,
+    barrier_direction: str = "up",
+    spot: float = 0.65,
+    barrier: float = 0.705,
+    distance_pct: float = 8.4615,
+) -> TouchProbabilityResult:
     return TouchProbabilityResult(
         product_type="Ratio Convertible Forward",
         client_direction="Importer",
         pair="AUD/USD",
-        spot=0.65,
+        spot=spot,
         strike=0.685,
-        barrier=0.705,
-        barrier_direction="up",
+        barrier=barrier,
+        barrier_direction=barrier_direction,
         protected_amount=500_000,
         ratio_amount=1_000_000,
         amount_currency="USD",
         barrier_level_period="continuous",
         expiry_time_zone="Tokyo",
         days_to_expiry=135,
-        distance_pct=8.4615,
+        distance_pct=distance_pct,
         sample_count=422,
         touch_count=72,
         touch_probability=17.0616,
