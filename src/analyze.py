@@ -20,7 +20,7 @@ from src.repository import (
     save_volatility_adjustment,
     upsert_market_prices,
 )
-from src.reporting import format_summary
+from src.reporting import format_forecast_report, format_summary
 from src.training_dataset import build_price_only_training_dataset, build_price_plus_external_training_dataset
 from src.volatility_adjustment import calculate_volatility_adjusted_probability
 
@@ -44,6 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-db", help="optional SQLite path for saving research data")
     parser.add_argument("--export-training-dataset", help="optional CSV path for exporting price-only training data")
     parser.add_argument("--include-external-features", action="store_true", help="download DXY/VIX and print external features")
+    parser.add_argument("--report-style", default="summary", choices=["summary", "forecast"])
     parser.add_argument("--json", action="store_true", help="print raw JSON instead of a readable summary")
     return parser.parse_args()
 
@@ -150,15 +151,16 @@ def main() -> None:
             )
         )
     else:
+        formatter = format_forecast_report if args.report_style == "forecast" else format_summary
         print(
-            format_summary(
-                result,
-                features,
-                volatility_adjustment,
-                price_model_evaluation,
-                external_features,
-                price_plus_external_model_evaluation,
-                barrier_theory_evaluation,
+            formatter(
+                result=result,
+                features=features,
+                volatility_adjustment=volatility_adjustment,
+                price_model=price_model_evaluation,
+                external_features=external_features,
+                price_plus_external_model=price_plus_external_model_evaluation,
+                barrier_theory=barrier_theory_evaluation,
             )
         )
 

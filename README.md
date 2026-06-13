@@ -135,6 +135,36 @@ python -m src.analyze \
   --json
 ```
 
+Use `--report-style forecast` for an institutional-style probability report:
+
+```bash
+python -m src.analyze \
+  --product-type "Ratio Convertible Forward" \
+  --client-direction Importer \
+  --protected-amount 500000 \
+  --ratio-amount 1000000 \
+  --amount-currency USD \
+  --trade-date 2026-04-15 \
+  --expiry-date 2026-12-30 \
+  --spot 0.6800 \
+  --strike 0.6850 \
+  --barrier 0.6935 \
+  --barrier-direction up \
+  --period 2y \
+  --report-style forecast
+```
+
+The forecast-style report includes:
+
+- question and forecast date
+- probability distribution
+- most likely outcome
+- trade snapshot
+- reference estimates
+- barrier-theory details
+- touch-supporting and touch-opposing factors
+- model risk notes
+
 Add `--save-db` to persist research data into SQLite:
 
 ```bash
