@@ -169,6 +169,7 @@ Exit criteria:
 - Feature datasets can be regenerated and compared.
 - One analysis result can be saved and reloaded.
 - Engine and model remain independent from SQLite.
+- Status: complete.
 
 ## Phase 5 - Price-Only Probability Model
 
@@ -316,13 +317,12 @@ Exit criteria:
 
 ## Recommended Immediate Next Step
 
-Build Phase 4:
+Build Phase 5:
 
 ```text
-SQLite research data layer
-market data persistence
-feature dataset / label persistence
-evaluation output persistence
+price-only probability model
+walk-forward validation
+comparison against historical baseline and volatility-adjusted estimate
 ```
 
-Do not build Streamlit, FastAPI, or SQLite until the forward-estimate features are useful enough to show.
+Do not build Streamlit or FastAPI until the forward-estimate logic is useful enough to show.

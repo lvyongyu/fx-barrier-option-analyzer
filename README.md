@@ -110,6 +110,33 @@ python -m src.analyze \
   --json
 ```
 
+Add `--save-db` to persist research data into SQLite:
+
+```bash
+python -m src.analyze \
+  --product-type "Ratio Convertible Forward" \
+  --client-direction Importer \
+  --protected-amount 500000 \
+  --ratio-amount 1000000 \
+  --amount-currency USD \
+  --trade-date 2026-04-15 \
+  --expiry-date 2026-12-30 \
+  --spot 0.6800 \
+  --strike 0.6850 \
+  --barrier 0.6935 \
+  --barrier-direction up \
+  --period 2y \
+  --save-db data/research.sqlite3
+```
+
+The research database stores:
+
+- `market_prices`
+- `trades`
+- `feature_snapshots`
+- `analysis_results`
+- `volatility_adjustments`
+
 ## Calculation Summary
 
 For the target trade:
