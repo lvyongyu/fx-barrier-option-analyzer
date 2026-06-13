@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from src.barrier_engine import TouchProbabilityResult
 from src.feature_engine import FeatureSnapshot
+from src.volatility_adjustment import VolatilityAdjustedResult
 
 
-def format_summary(result: TouchProbabilityResult, features: FeatureSnapshot | None = None) -> str:
+def format_summary(
+    result: TouchProbabilityResult,
+    features: FeatureSnapshot | None = None,
+    volatility_adjustment: VolatilityAdjustedResult | None = None,
+) -> str:
     lines = [
         f"{result.pair} barrier analysis",
         f"Product: {result.product_type}",
@@ -35,11 +40,27 @@ def format_summary(result: TouchProbabilityResult, features: FeatureSnapshot | N
         [
             f"Expiry time zone: {result.expiry_time_zone}",
             "",
-            f"Historical samples: {result.sample_count}",
-            f"Touch count: {result.touch_count}",
-            f"Historical touch probability: {result.touch_probability:.2f}%",
-        ]
-    )
+                f"Historical samples: {result.sample_count}",
+                f"Touch count: {result.touch_count}",
+                f"Historical touch probability: {result.touch_probability:.2f}%",
+            ]
+        )
+
+    if volatility_adjustment:
+        lines.extend(
+            [
+                "",
+                "Volatility-adjusted estimate:",
+                f"Method: {volatility_adjustment.method}",
+                f"Current 20d vol percentile: {_format_optional_pct(volatility_adjustment.current_vol_percentile)}",
+                f"Comparable samples: {volatility_adjustment.comparable_sample_count}",
+                f"Comparable touch count: {volatility_adjustment.comparable_touch_count}",
+                "Volatility-adjusted probability: "
+                f"{_format_optional_pct(volatility_adjustment.volatility_adjusted_probability)}",
+            ]
+        )
+        if volatility_adjustment.used_fallback and volatility_adjustment.fallback_reason:
+            lines.append(f"Fallback: {volatility_adjustment.fallback_reason}")
 
     if features:
         lines.extend(

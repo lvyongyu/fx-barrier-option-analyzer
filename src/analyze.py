@@ -9,6 +9,7 @@ from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import download_audusd_prices
 from src.feature_engine import build_feature_snapshot
 from src.reporting import format_summary
+from src.volatility_adjustment import calculate_volatility_adjusted_probability
 
 
 def parse_args() -> argparse.Namespace:
@@ -52,10 +53,26 @@ def main() -> None:
     )
     result = calculate_touch_probability(trade, prices)
     features = build_feature_snapshot(trade, prices)
+    volatility_adjustment = calculate_volatility_adjusted_probability(
+        trade,
+        prices,
+        baseline_probability=result.touch_probability,
+        current_features=features,
+    )
     if args.json:
-        print(json.dumps({"result": asdict(result), "features": asdict(features)}, default=str, indent=2))
+        print(
+            json.dumps(
+                {
+                    "result": asdict(result),
+                    "features": asdict(features),
+                    "volatility_adjustment": asdict(volatility_adjustment),
+                },
+                default=str,
+                indent=2,
+            )
+        )
     else:
-        print(format_summary(result, features))
+        print(format_summary(result, features, volatility_adjustment))
 
 
 if __name__ == "__main__":

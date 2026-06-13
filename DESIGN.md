@@ -431,10 +431,17 @@ Example:
     "recent_high_distance": 7.02,
     "recent_low_distance": -0.50
   },
-  "volatility_adjusted_probability": null,
+  "volatility_adjustment": {
+    "method": "volatility_bucket",
+    "current_vol_percentile": 40.0,
+    "comparable_sample_count": 63,
+    "comparable_touch_count": 57,
+    "volatility_adjusted_probability": 90.48,
+    "used_fallback": false
+  },
   "model_probability": null,
-  "probability_used": 45.1,
-  "method": "historical_baseline"
+  "probability_used": 90.48,
+  "method": "volatility_bucket"
 }
 ```
 

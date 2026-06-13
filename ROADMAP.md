@@ -136,6 +136,7 @@ Exit criteria:
   - volatility-adjusted probability
   - comparable sample count
 - Tests prove bucket filtering and fallback behavior.
+- Status: complete.
 
 ## Phase 4 - Data Layer For Research
 
@@ -315,12 +316,13 @@ Exit criteria:
 
 ## Recommended Immediate Next Step
 
-Build Phase 3:
+Build Phase 4:
 
 ```text
-volatility bucket comparison
-volatility-adjusted probability
-fallback to historical baseline when comparable samples are too low
+SQLite research data layer
+market data persistence
+feature dataset / label persistence
+evaluation output persistence
 ```
 
 Do not build Streamlit, FastAPI, or SQLite until the forward-estimate features are useful enough to show.

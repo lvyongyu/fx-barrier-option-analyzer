@@ -83,6 +83,19 @@ Recent low distance: -0.50%
 
 These features are not yet a model. They are the inputs needed for the next volatility/regime-adjusted estimate.
 
+The CLI now also prints a first volatility-adjusted estimate:
+
+```text
+Volatility-adjusted estimate:
+Method: volatility_bucket
+Current 20d vol percentile: 40.00%
+Comparable samples: 63
+Comparable touch count: 57
+Volatility-adjusted probability: 90.48%
+```
+
+This compares the current trade against historical samples whose 20-day realized volatility percentile is near the current volatility percentile. If there are too few comparable samples, the tool falls back to the historical baseline and explains why.
+
 By default, the CLI prints a readable summary. Add `--json` if you want the raw structured result:
 
 ```bash
