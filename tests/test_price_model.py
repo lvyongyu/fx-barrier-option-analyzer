@@ -5,7 +5,12 @@ import pytest
 
 from src.barrier_engine import Trade
 from src.feature_engine import build_feature_snapshot
-from src.price_model import evaluate_price_only_model, evaluate_price_plus_external_model, prepare_model_dataset
+from src.price_model import (
+    calculate_calibration_buckets,
+    evaluate_price_only_model,
+    evaluate_price_plus_external_model,
+    prepare_model_dataset,
+)
 from src.training_dataset import (
     build_price_only_training_dataset,
     external_feature_columns,
@@ -38,6 +43,8 @@ def test_evaluate_price_only_model_returns_probability_and_metrics() -> None:
     assert evaluation.baseline_brier_score is not None
     assert evaluation.model_log_loss is not None
     assert evaluation.baseline_log_loss is not None
+    assert len(evaluation.calibration_buckets) == 5
+    assert sum(bucket.sample_count for bucket in evaluation.calibration_buckets) == evaluation.test_rows
 
 
 def test_evaluate_price_only_model_falls_back_for_single_class_target() -> None:
@@ -102,6 +109,21 @@ def test_price_only_feature_columns_are_stable() -> None:
         "recent_high_distance",
         "recent_low_distance",
     ]
+
+
+def test_calibration_buckets_report_actual_hit_rate_by_probability_band() -> None:
+    buckets = calculate_calibration_buckets(
+        predicted_probabilities=[0.05, 0.25, 0.45, 0.85, 0.95],
+        actual_targets=[0, 0, 1, 1, 0],
+    )
+
+    assert len(buckets) == 5
+    assert buckets[0].sample_count == 1
+    assert buckets[0].actual_hit_rate == 0.0
+    assert buckets[2].sample_count == 1
+    assert buckets[2].actual_hit_rate == 100.0
+    assert buckets[4].sample_count == 2
+    assert buckets[4].actual_hit_rate == 50.0
 
 
 def make_model_prices(days: int = 260, always_hit: bool = False) -> pd.DataFrame:

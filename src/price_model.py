@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -9,6 +9,15 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from src.training_dataset import TARGET_COLUMN, price_only_feature_columns, price_plus_external_feature_columns
+
+
+@dataclass(frozen=True)
+class CalibrationBucket:
+    lower_bound: float
+    upper_bound: float
+    sample_count: int
+    average_predicted_probability: float | None
+    actual_hit_rate: float | None
 
 
 @dataclass(frozen=True)
@@ -25,6 +34,7 @@ class PriceModelEvaluation:
     baseline_log_loss: float | None
     used_fallback: bool
     fallback_reason: str | None
+    calibration_buckets: list[CalibrationBucket] = field(default_factory=list)
 
 
 def evaluate_price_only_model(
@@ -105,6 +115,7 @@ def evaluate_probability_model(
         baseline_log_loss=float(log_loss(y_test, baseline_probabilities, labels=[0, 1])),
         used_fallback=used_fallback,
         fallback_reason=fallback_reason,
+        calibration_buckets=calculate_calibration_buckets(test_probabilities, y_test),
     )
 
 
@@ -130,6 +141,46 @@ def prepare_model_dataset(dataset: pd.DataFrame, feature_columns: list[str] | No
     prepared = prepared.sort_values("as_of_date").reset_index(drop=True)
     prepared = prepared.dropna(subset=feature_columns + [TARGET_COLUMN])
     return prepared
+
+
+def calculate_calibration_buckets(
+    predicted_probabilities: list[float] | pd.Series,
+    actual_targets: list[int] | pd.Series,
+    bucket_count: int = 5,
+) -> list[CalibrationBucket]:
+    frame = pd.DataFrame(
+        {
+            "predicted_probability": pd.Series(list(predicted_probabilities), dtype="float64") * 100,
+            "actual_target": pd.Series(list(actual_targets), dtype="int64"),
+        }
+    )
+    buckets: list[CalibrationBucket] = []
+    bucket_width = 100 / bucket_count
+    for index in range(bucket_count):
+        lower = index * bucket_width
+        upper = (index + 1) * bucket_width
+        if index == bucket_count - 1:
+            bucket = frame[
+                (frame["predicted_probability"] >= lower)
+                & (frame["predicted_probability"] <= upper)
+            ]
+        else:
+            bucket = frame[
+                (frame["predicted_probability"] >= lower)
+                & (frame["predicted_probability"] < upper)
+            ]
+        buckets.append(
+            CalibrationBucket(
+                lower_bound=lower,
+                upper_bound=upper,
+                sample_count=int(len(bucket)),
+                average_predicted_probability=(
+                    float(bucket["predicted_probability"].mean()) if not bucket.empty else None
+                ),
+                actual_hit_rate=float(bucket["actual_target"].mean() * 100) if not bucket.empty else None,
+            )
+        )
+    return buckets
 
 
 def _fallback(reason: str) -> PriceModelEvaluation:

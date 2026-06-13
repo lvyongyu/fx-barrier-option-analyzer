@@ -151,6 +151,16 @@ def _append_model_section(lines: list[str], title: str, price_model: PriceModelE
             f"Model comparison: {_model_comparison_note(price_model)}",
         ]
     )
+    if price_model.calibration_buckets:
+        lines.append("Calibration buckets:")
+        for bucket in price_model.calibration_buckets:
+            lines.append(
+                "  "
+                f"{bucket.lower_bound:.0f}-{bucket.upper_bound:.0f}%: "
+                f"n={bucket.sample_count}, "
+                f"avg_pred={_format_optional_pct(bucket.average_predicted_probability)}, "
+                f"actual_hit={_format_optional_pct(bucket.actual_hit_rate)}"
+            )
     if price_model.used_fallback and price_model.fallback_reason:
         lines.append(f"Fallback: {price_model.fallback_reason}")
 

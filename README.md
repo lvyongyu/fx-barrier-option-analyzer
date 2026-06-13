@@ -246,6 +246,32 @@ Model comparison: model beat baseline on Brier score
 The external model is still experimental. Treat it as useful only when its walk-forward
 metrics improve on the baseline or explain a clear difference from the price-only model.
 
+## Model Evaluation Report
+
+Use the evaluation report to compare historical window lengths before trusting any model output:
+
+```bash
+python -m src.evaluation_report \
+  --trade-date 2026-04-15 \
+  --expiry-date 2026-12-30 \
+  --spot 0.6800 \
+  --strike 0.6850 \
+  --barrier 0.6935 \
+  --barrier-direction up \
+  --periods 2y 5y 10y
+```
+
+The report compares:
+
+- historical baseline probability
+- volatility-adjusted probability
+- price-only model probability and Brier score
+- price + external model probability and Brier score
+- calibration buckets showing predicted probability versus actual hit rate
+
+Calibration buckets answer the practical question: when the model predicts a 40-60%
+touch probability, did similar historical samples actually hit about 40-60% of the time?
+
 ## Calculation Summary
 
 For the target trade:
