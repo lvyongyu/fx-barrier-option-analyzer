@@ -198,8 +198,8 @@ Required inputs:
 
 Optional inputs:
 
-- `trade_date`: if blank, the analyzer uses the latest available AUD/USD market date
-- `spot`: if blank, the analyzer uses AUD/USD close on or before `trade_date`
+- `trade_date`: analysis date, YYYY-MM-DD. If blank, use the latest AUD/USD market date
+- `spot`: AUD/USD spot on the analysis date. If blank, use AUD/USD close for `trade_date`
 - `period`: Yahoo Finance history window, default `5y`
 
 `protected_amount` and `ratio_amount` are intentionally not required because they affect payoff exposure, not barrier-touch probability.

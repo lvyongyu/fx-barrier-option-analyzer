@@ -20,11 +20,11 @@ on:
         required: true
         default: "up"
       trade_date:
-        description: "Optional. If blank, use latest available AUD/USD market date."
+        description: "Analysis date, YYYY-MM-DD. Leave blank to use latest AUD/USD market date."
         required: false
         default: ""
       spot:
-        description: "Optional. If blank, use AUD/USD close on/as before trade_date."
+        description: "AUD/USD spot on analysis date. Leave blank to use AUD/USD close for trade_date."
         required: false
         default: ""
       period:
