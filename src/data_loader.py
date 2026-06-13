@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import date
+
 import pandas as pd
 import yfinance as yf
 
@@ -21,3 +23,24 @@ def download_audusd_prices(period: str = "2y") -> pd.DataFrame:
     frame = data.reset_index().rename(columns=str.lower)
     frame["pair"] = pair
     return normalize_prices(frame[["date", "pair", "open", "high", "low", "close"]], pair=pair)
+
+
+def resolve_market_date_and_spot(
+    prices: pd.DataFrame,
+    trade_date: date | None = None,
+    spot: float | None = None,
+) -> tuple[date, float]:
+    frame = normalize_prices(prices, pair="AUD/USD")
+    if trade_date is None:
+        resolved_date = frame.iloc[-1]["date"]
+    else:
+        history = frame[frame["date"] <= trade_date]
+        if history.empty:
+            raise ValueError(f"no AUD/USD market data available on or before trade_date ({trade_date})")
+        resolved_date = history.iloc[-1]["date"]
+
+    if spot is not None:
+        return resolved_date, spot
+
+    row = frame[frame["date"] <= resolved_date].iloc[-1]
+    return resolved_date, float(row["close"])

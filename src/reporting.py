@@ -344,11 +344,7 @@ def _primary_touch_probability(
 
 
 def _direction_label(result: TouchProbabilityResult) -> str:
-    if result.barrier > result.spot:
-        return "up"
-    if result.barrier < result.spot:
-        return "down"
-    return "at-spot"
+    return result.barrier_direction
 
 
 def _most_likely_outcome(probability: float | None) -> str:

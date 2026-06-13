@@ -1,0 +1,81 @@
+name: Manual FX Barrier Forecast
+
+on:
+  workflow_dispatch:
+    inputs:
+      expiry_date:
+        description: "Barrier expiry date, YYYY-MM-DD"
+        required: true
+        default: "2026-12-30"
+      strike:
+        description: "Strike rate from the trade sheet"
+        required: true
+        default: "0.6850"
+      barrier:
+        description: "Barrier level from the trade sheet"
+        required: true
+        default: "0.6935"
+      barrier_direction:
+        description: "Barrier direction: up or down"
+        required: true
+        default: "up"
+      trade_date:
+        description: "Optional. If blank, use latest available AUD/USD market date."
+        required: false
+        default: ""
+      spot:
+        description: "Optional. If blank, use AUD/USD close on/as before trade_date."
+        required: false
+        default: ""
+      period:
+        description: "Yahoo Finance history window, e.g. 2y, 5y, 10y"
+        required: false
+        default: "5y"
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Run forecast
+        shell: bash
+        run: |
+          ARGS=(
+            --product-type "Ratio Convertible Forward"
+            --client-direction Importer
+            --amount-currency USD
+            --expiry-date "${{ inputs.expiry_date }}"
+            --strike "${{ inputs.strike }}"
+            --barrier "${{ inputs.barrier }}"
+            --barrier-direction "${{ inputs.barrier_direction }}"
+            --barrier-level-period continuous
+            --expiry-time-zone Tokyo
+            --period "${{ inputs.period }}"
+            --report-style forecast
+          )
+
+          if [ -n "${{ inputs.trade_date }}" ]; then
+            ARGS+=(--trade-date "${{ inputs.trade_date }}")
+          fi
+
+          if [ -n "${{ inputs.spot }}" ]; then
+            ARGS+=(--spot "${{ inputs.spot }}")
+          fi
+
+          python -m src.analyze "${ARGS[@]}" | tee forecast_report.txt
+
+      - name: Upload forecast report
+        uses: actions/upload-artifact@v4
+        with:
+          name: forecast-report
+          path: forecast_report.txt

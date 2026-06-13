@@ -272,6 +272,7 @@ def result_with_path(actual_path: BarrierPathResult) -> TouchProbabilityResult:
         spot=0.65,
         strike=0.685,
         barrier=0.705,
+        barrier_direction="up",
         protected_amount=500_000,
         ratio_amount=1_000_000,
         amount_currency="USD",

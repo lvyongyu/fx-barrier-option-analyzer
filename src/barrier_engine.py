@@ -43,6 +43,7 @@ class TouchProbabilityResult:
     spot: float
     strike: float
     barrier: float
+    barrier_direction: str
     protected_amount: float | None
     ratio_amount: float | None
     amount_currency: str | None
@@ -206,6 +207,7 @@ def calculate_touch_probability(trade: Trade, prices: pd.DataFrame) -> TouchProb
         spot=trade.spot,
         strike=trade.strike,
         barrier=trade.barrier,
+        barrier_direction=trade.barrier_direction,
         protected_amount=trade.protected_amount,
         ratio_amount=trade.ratio_amount,
         amount_currency=trade.amount_currency,

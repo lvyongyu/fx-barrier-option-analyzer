@@ -181,6 +181,33 @@ The forecast-style report includes:
 - touch-supporting and touch-opposing factors
 - model risk notes
 
+## Run From GitHub Actions
+
+The repository includes a manual workflow:
+
+```text
+Actions -> Manual FX Barrier Forecast -> Run workflow
+```
+
+Required inputs:
+
+- `expiry_date`
+- `strike`
+- `barrier`
+- `barrier_direction`
+
+Optional inputs:
+
+- `trade_date`: if blank, the analyzer uses the latest available AUD/USD market date
+- `spot`: if blank, the analyzer uses AUD/USD close on or before `trade_date`
+- `period`: Yahoo Finance history window, default `5y`
+
+`protected_amount` and `ratio_amount` are intentionally not required because they affect payoff exposure, not barrier-touch probability.
+
+If `trade_date` and `spot` are left blank, the report is a current-market risk check. If the latest spot is already beyond the barrier in the selected barrier direction, the touch probability can be 100%. To reproduce the original trade-date view, enter the original `trade_date` and `spot`.
+
+The workflow prints the forecast report in the run log and uploads `forecast_report.txt` as an artifact.
+
 Add `--save-db` to persist research data into SQLite:
 
 ```bash
