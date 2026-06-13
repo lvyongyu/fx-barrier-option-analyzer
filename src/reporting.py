@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.barrier_theory import BarrierTheoryEvaluation
 from src.barrier_engine import TouchProbabilityResult
 from src.external_features import ExternalFeatureSnapshot
 from src.feature_engine import FeatureSnapshot
@@ -14,6 +15,7 @@ def format_summary(
     price_model: PriceModelEvaluation | None = None,
     external_features: ExternalFeatureSnapshot | None = None,
     price_plus_external_model: PriceModelEvaluation | None = None,
+    barrier_theory: BarrierTheoryEvaluation | None = None,
 ) -> str:
     lines = [
         f"{result.pair} barrier analysis",
@@ -66,6 +68,9 @@ def format_summary(
         )
         if volatility_adjustment.used_fallback and volatility_adjustment.fallback_reason:
             lines.append(f"Fallback: {volatility_adjustment.fallback_reason}")
+
+    if barrier_theory:
+        _append_barrier_theory_section(lines, barrier_theory)
 
     if price_model:
         _append_model_section(lines, "Price-only model estimate:", price_model)
@@ -165,6 +170,28 @@ def _append_model_section(lines: list[str], title: str, price_model: PriceModelE
         lines.append(f"Fallback: {price_model.fallback_reason}")
 
 
+def _append_barrier_theory_section(lines: list[str], evaluation: BarrierTheoryEvaluation) -> None:
+    snapshot = evaluation.current_snapshot
+    lines.extend(
+        [
+            "",
+            "Barrier-theory estimate:",
+            f"Method: {snapshot.method}",
+            f"GBM probability: {_format_optional_pct(snapshot.probability)}",
+            f"Expected move to expiry: {_format_optional_pct(snapshot.expected_move_pct)}",
+            f"Distance in vol units: {_format_optional_number(snapshot.distance_in_vol_units)}",
+            f"Barrier z-score: {_format_optional_number(snapshot.barrier_z_score)}",
+            f"Train rows: {evaluation.train_rows}",
+            f"Test rows: {evaluation.test_rows}",
+            f"GBM Brier score: {_format_optional_number(evaluation.gbm_brier_score)}",
+            f"Baseline Brier score: {_format_optional_number(evaluation.baseline_brier_score)}",
+            f"GBM comparison: {_barrier_theory_comparison_note(evaluation)}",
+        ]
+    )
+    if evaluation.used_fallback and evaluation.fallback_reason:
+        lines.append(f"Fallback: {evaluation.fallback_reason}")
+
+
 def _model_comparison_note(price_model: PriceModelEvaluation) -> str:
     if price_model.model_brier_score is None or price_model.baseline_brier_score is None:
         return "n/a"
@@ -173,3 +200,13 @@ def _model_comparison_note(price_model: PriceModelEvaluation) -> str:
     if price_model.model_brier_score > price_model.baseline_brier_score:
         return "model underperformed baseline on Brier score"
     return "model tied baseline on Brier score"
+
+
+def _barrier_theory_comparison_note(evaluation: BarrierTheoryEvaluation) -> str:
+    if evaluation.gbm_brier_score is None or evaluation.baseline_brier_score is None:
+        return "n/a"
+    if evaluation.gbm_brier_score < evaluation.baseline_brier_score:
+        return "GBM beat baseline on Brier score"
+    if evaluation.gbm_brier_score > evaluation.baseline_brier_score:
+        return "GBM underperformed baseline on Brier score"
+    return "GBM tied baseline on Brier score"

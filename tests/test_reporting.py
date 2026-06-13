@@ -1,5 +1,6 @@
 from datetime import date
 
+from src.barrier_theory import BarrierTheoryEvaluation, BarrierTheorySnapshot
 from src.barrier_engine import BarrierPathResult, TouchProbabilityResult
 from src.external_features import ExternalFeatureSnapshot
 from src.price_model import PriceModelEvaluation
@@ -163,6 +164,47 @@ def test_format_summary_includes_price_plus_external_model() -> None:
     assert "Price + external model estimate:" in summary
     assert "Model probability: 52.00%" in summary
     assert "Model comparison: model beat baseline on Brier score" in summary
+
+
+def test_format_summary_includes_barrier_theory_estimate() -> None:
+    result = result_with_path(
+        BarrierPathResult(
+            is_applicable=False,
+            reason="expiry_date is after available market data (2026-06-12)",
+            barrier_hit=False,
+            hit_date=None,
+            max_high=None,
+            min_low=None,
+            days_to_hit=None,
+        )
+    )
+    theory = BarrierTheoryEvaluation(
+        current_snapshot=BarrierTheorySnapshot(
+            probability=72.0,
+            expected_move_pct=5.0,
+            distance_in_vol_units=0.8,
+            barrier_z_score=0.75,
+            method="driftless_log_brownian_reflection",
+            fallback_reason=None,
+        ),
+        train_rows=100,
+        test_rows=50,
+        positive_rate_train=60.0,
+        positive_rate_test=62.0,
+        baseline_probability=60.0,
+        gbm_brier_score=0.18,
+        baseline_brier_score=0.22,
+        used_fallback=False,
+        fallback_reason=None,
+        calibration_buckets=[],
+    )
+
+    summary = format_summary(result, barrier_theory=theory)
+
+    assert "Barrier-theory estimate:" in summary
+    assert "GBM probability: 72.00%" in summary
+    assert "Expected move to expiry: 5.00%" in summary
+    assert "GBM comparison: GBM beat baseline on Brier score" in summary
 
 
 def result_with_path(actual_path: BarrierPathResult) -> TouchProbabilityResult:

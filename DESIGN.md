@@ -262,7 +262,7 @@ The system should avoid pretending that historical frequency alone is a complete
 
 ### Barrier-Theory Baseline
 
-The next probability layer should be a reproducible theoretical touch estimate, not another generic classifier.
+The probability stack includes a reproducible theoretical touch estimate, not only generic classifiers.
 
 For an FX barrier event, the model should explicitly account for:
 
@@ -276,7 +276,7 @@ expected move to expiry
 distance in volatility units
 ```
 
-A first implementation can use driftless Geometric Brownian Motion, either through a closed-form approximation or a deterministic simulation. This gives the analyzer a transparent benchmark for path probability:
+The first implementation uses a driftless log-Brownian reflection approximation. This gives the analyzer a transparent benchmark for path probability:
 
 ```text
 P(min_path <= down_barrier before expiry)
@@ -290,7 +290,7 @@ This barrier-theory probability should be evaluated against:
 - Price-only logistic model.
 - Price + external-feature model.
 
-If the barrier-theory estimate is useful, later ML should calibrate or blend it rather than relearn barrier math from scratch.
+If the barrier-theory estimate is useful, later ML should calibrate or blend it rather than relearn barrier math from scratch. Initial sample-trade evaluation shows GBM helps some down-barrier cases but does not universally beat the historical baseline.
 
 ## 7. Data Requirements
 
@@ -569,7 +569,7 @@ Current findings:
 
 Design implication:
 
-The next model step is a transparent GBM/barrier-theory baseline. UI, API, and additional external features should wait until this probability layer is implemented and evaluated.
+The next model step is calibration around the transparent GBM/barrier-theory baseline. UI, API, and additional external features should wait until this probability layer is better calibrated and evaluated.
 
 ## 14. Known Limitations
 

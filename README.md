@@ -265,6 +265,7 @@ The report compares:
 
 - historical baseline probability
 - volatility-adjusted probability
+- GBM barrier-theory probability and Brier score
 - price-only model probability and Brier score
 - price + external model probability and Brier score
 - calibration buckets showing predicted probability versus actual hit rate
@@ -293,6 +294,15 @@ python -m src.evaluation_report --sample-trades --periods 5y
 The batch report shows which trade types, if any, have positive model `dBrier`.
 Positive `dBrier` means the model beat the historical baseline on walk-forward Brier score.
 
+Example 5y batch finding after adding the GBM barrier-theory baseline:
+
+```text
+medium_down_90d  GBM dBrier  0.0662   Price dBrier -0.1982
+far_down_180d    GBM dBrier  0.0171   Price dBrier -0.1227
+```
+
+This means the transparent GBM estimate is already more useful than the generic logistic model in some down-barrier scenarios, though it is not yet a universal improvement.
+
 ## External Forecast Comparison
 
 An external institutional-style forecast for June 11, 2026 to September 11, 2026 estimated:
@@ -315,7 +325,7 @@ Using spot 0.7007 and barrier 0.6908:
 
 Simple driftless GBM estimates were lower, roughly 57-73% depending on spot and realized volatility.
 
-Conclusion: the external forecast is directionally reasonable, but the report is not fully auditable because it does not disclose enough simulation and calibration detail. The next project phase is therefore a reproducible barrier-theory baseline:
+Conclusion: the external forecast is directionally reasonable, but the report is not fully auditable because it does not disclose enough simulation and calibration detail. The project now includes a reproducible barrier-theory baseline:
 
 ```text
 GBM touch probability

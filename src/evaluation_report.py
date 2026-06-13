@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 from datetime import date
 import json
 
+from src.barrier_theory import BarrierTheoryEvaluation, evaluate_barrier_theory_model
 from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import download_audusd_prices
 from src.external_features import build_external_feature_snapshot, download_external_market_data
@@ -24,6 +25,7 @@ class PeriodEvaluation:
     baseline_touch_count: int
     volatility_adjusted_probability: float | None
     volatility_comparable_sample_count: int
+    barrier_theory_model: BarrierTheoryEvaluation
     price_only_model: PriceModelEvaluation
     price_plus_external_model: PriceModelEvaluation | None
 
@@ -80,6 +82,7 @@ def evaluate_trade_on_data(
         current_features=features,
     )
     price_only_dataset = build_price_only_training_dataset(trade, prices)
+    barrier_theory_model = evaluate_barrier_theory_model(price_only_dataset, asdict(features))
     price_only_model = evaluate_price_only_model(price_only_dataset, asdict(features))
 
     price_plus_external_model = None
@@ -110,6 +113,7 @@ def evaluate_trade_on_data(
         baseline_touch_count=result.touch_count,
         volatility_adjusted_probability=volatility_adjustment.volatility_adjusted_probability,
         volatility_comparable_sample_count=volatility_adjustment.comparable_sample_count,
+        barrier_theory_model=barrier_theory_model,
         price_only_model=price_only_model,
         price_plus_external_model=price_plus_external_model,
     )
@@ -157,6 +161,9 @@ def format_evaluation_report(evaluations: list[PeriodEvaluation]) -> str:
                 "Hits",
                 "Baseline",
                 "Vol adj",
+                "GBM prob",
+                "GBM Brier",
+                "GBM dBrier",
                 "Price prob",
                 "Price Brier",
                 "Price dBrier",
@@ -186,6 +193,8 @@ def format_sample_trade_evaluation_report(evaluations: list[SampleTradeEvaluatio
                     "Samples",
                     "Baseline",
                     "Vol adj",
+                    "GBM prob",
+                    "GBM dBrier",
                     "Price prob",
                     "Price dBrier",
                     "Ext prob",
@@ -272,6 +281,7 @@ def _validate_single_trade_args(args: argparse.Namespace) -> None:
 
 
 def _summary_row(evaluation: PeriodEvaluation) -> list[str]:
+    barrier_theory_model = evaluation.barrier_theory_model
     price_model = evaluation.price_only_model
     external_model = evaluation.price_plus_external_model
     return [
@@ -281,6 +291,9 @@ def _summary_row(evaluation: PeriodEvaluation) -> list[str]:
         str(evaluation.baseline_touch_count),
         _format_pct(evaluation.baseline_probability),
         _format_pct(evaluation.volatility_adjusted_probability),
+        _format_pct(barrier_theory_model.current_snapshot.probability),
+        _format_number(barrier_theory_model.gbm_brier_score),
+        _format_number(_gbm_brier_improvement(barrier_theory_model)),
         _format_pct(price_model.model_probability),
         _format_number(price_model.model_brier_score),
         _format_number(_brier_improvement(price_model)),
@@ -292,6 +305,7 @@ def _summary_row(evaluation: PeriodEvaluation) -> list[str]:
 
 def _sample_summary_row(evaluation: SampleTradeEvaluation) -> list[str]:
     period_evaluation = evaluation.period_evaluation
+    barrier_theory_model = period_evaluation.barrier_theory_model
     price_model = period_evaluation.price_only_model
     external_model = period_evaluation.price_plus_external_model
     return [
@@ -302,6 +316,8 @@ def _sample_summary_row(evaluation: SampleTradeEvaluation) -> list[str]:
         str(period_evaluation.baseline_sample_count),
         _format_pct(period_evaluation.baseline_probability),
         _format_pct(period_evaluation.volatility_adjusted_probability),
+        _format_pct(barrier_theory_model.current_snapshot.probability),
+        _format_number(_gbm_brier_improvement(barrier_theory_model)),
         _format_pct(price_model.model_probability),
         _format_number(_brier_improvement(price_model)),
         _format_pct(external_model.model_probability) if external_model else "n/a",
@@ -311,6 +327,7 @@ def _sample_summary_row(evaluation: SampleTradeEvaluation) -> list[str]:
 
 def _format_period_detail(evaluation: PeriodEvaluation) -> list[str]:
     lines = [f"{evaluation.period} calibration"]
+    lines.extend(_format_theory_buckets("GBM", evaluation.barrier_theory_model))
     lines.extend(_format_model_buckets("Price-only", evaluation.price_only_model))
     if evaluation.price_plus_external_model:
         lines.extend(_format_model_buckets("Price + external", evaluation.price_plus_external_model))
@@ -318,6 +335,22 @@ def _format_period_detail(evaluation: PeriodEvaluation) -> list[str]:
 
 
 def _format_model_buckets(label: str, evaluation: PriceModelEvaluation) -> list[str]:
+    lines = [f"{label}:"]
+    if evaluation.used_fallback:
+        lines.append(f"  fallback: {evaluation.fallback_reason}")
+        return lines
+    for bucket in evaluation.calibration_buckets:
+        lines.append(
+            "  "
+            f"{bucket.lower_bound:.0f}-{bucket.upper_bound:.0f}%: "
+            f"n={bucket.sample_count}, "
+            f"avg_pred={_format_pct(bucket.average_predicted_probability)}, "
+            f"actual_hit={_format_pct(bucket.actual_hit_rate)}"
+        )
+    return lines
+
+
+def _format_theory_buckets(label: str, evaluation: BarrierTheoryEvaluation) -> list[str]:
     lines = [f"{label}:"]
     if evaluation.used_fallback:
         lines.append(f"  fallback: {evaluation.fallback_reason}")
@@ -363,6 +396,12 @@ def _brier_improvement(evaluation: PriceModelEvaluation) -> float | None:
     if evaluation.baseline_brier_score is None or evaluation.model_brier_score is None:
         return None
     return evaluation.baseline_brier_score - evaluation.model_brier_score
+
+
+def _gbm_brier_improvement(evaluation: BarrierTheoryEvaluation) -> float | None:
+    if evaluation.baseline_brier_score is None or evaluation.gbm_brier_score is None:
+        return None
+    return evaluation.baseline_brier_score - evaluation.gbm_brier_score
 
 
 if __name__ == "__main__":

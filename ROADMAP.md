@@ -208,7 +208,7 @@ Exit criteria:
 - Status: model evaluation report can compare 2y/5y/10y windows before trusting model output.
 - Status: batch evaluation can compare generated near/medium/far up/down sample trades.
 - Finding: current logistic models generally do not beat the historical baseline across sample trades.
-- Next: redesign the model around a barrier-theory baseline before adding UI.
+- Next: use the barrier-theory baseline as the anchor for calibration and model redesign.
 
 ## Phase 5.5 - Barrier-Theory Baseline
 
@@ -256,7 +256,11 @@ Exit criteria:
 
 Status:
 
-- Planned next.
+- Initial implementation complete.
+- `src/barrier_theory.py` implements driftless log-Brownian reflection probability.
+- Single-trade and batch evaluation reports include GBM probability and GBM dBrier.
+- Tests cover GBM math, volatility sensitivity, expiry sensitivity, symmetry, fallbacks, and walk-forward evaluation.
+- Initial 5y sample batch finding: GBM improves over baseline for some down-barrier scenarios, especially medium/far down barriers, but does not universally beat baseline.
 - UI remains deferred until probability methods are more credible.
 
 ## Phase 6 - External Market Features
@@ -283,7 +287,7 @@ Exit criteria:
 - Status: evaluation report compares price-only versus price + external models across multiple historical windows.
 - Status: batch evaluation compares price-only versus price + external models across generated sample trades.
 - Finding: DXY/VIX did not improve the current sample-trade batch evaluation.
-- Next: pause additional external features until the GBM/barrier-theory baseline is implemented.
+- Next: pause additional external features until GBM calibration and label design are improved.
 
 ## Phase 7 - Minimal UI
 

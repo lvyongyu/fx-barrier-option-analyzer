@@ -5,6 +5,7 @@ from dataclasses import asdict
 from datetime import date
 import json
 
+from src.barrier_theory import evaluate_barrier_theory_model
 from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import download_audusd_prices
 from src.external_features import build_external_feature_snapshot, download_external_market_data
@@ -112,6 +113,7 @@ def main() -> None:
             "columns": list(training_dataset.columns),
         }
     price_model_evaluation = evaluate_price_only_model(training_dataset, asdict(features))
+    barrier_theory_evaluation = evaluate_barrier_theory_model(training_dataset, asdict(features))
     price_plus_external_model_evaluation = None
     if external_data and external_features:
         external_training_dataset = build_price_plus_external_training_dataset(
@@ -133,6 +135,7 @@ def main() -> None:
                     "features": asdict(features),
                     "external_features": asdict(external_features) if external_features else None,
                     "volatility_adjustment": asdict(volatility_adjustment),
+                    "barrier_theory": asdict(barrier_theory_evaluation),
                     "price_model": asdict(price_model_evaluation),
                     "price_plus_external_model": (
                         asdict(price_plus_external_model_evaluation)
@@ -155,6 +158,7 @@ def main() -> None:
                 price_model_evaluation,
                 external_features,
                 price_plus_external_model_evaluation,
+                barrier_theory_evaluation,
             )
         )
 
