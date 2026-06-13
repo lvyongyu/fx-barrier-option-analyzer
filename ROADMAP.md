@@ -204,6 +204,7 @@ Exit criteria:
 - Model beats or usefully complements baseline out of sample.
 - Feature leakage checks pass.
 - CLI output clearly labels model probability versus baseline probability.
+- Status: first experimental logistic regression complete; current validation may underperform baseline, so it remains a research signal.
 
 ## Phase 6 - External Market Features
 
@@ -322,9 +323,9 @@ Exit criteria:
 Build Phase 5:
 
 ```text
-price-only probability model training
-walk-forward validation
-comparison against historical baseline and volatility-adjusted estimate
+improve price-only model validation
+add calibration bucket report
+test longer research windows such as period="10y" or period="max"
 ```
 
 Do not build Streamlit or FastAPI until the forward-estimate logic is useful enough to show.

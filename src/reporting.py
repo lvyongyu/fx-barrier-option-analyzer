@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from src.barrier_engine import TouchProbabilityResult
 from src.feature_engine import FeatureSnapshot
+from src.price_model import PriceModelEvaluation
 from src.volatility_adjustment import VolatilityAdjustedResult
 
 
@@ -9,6 +10,7 @@ def format_summary(
     result: TouchProbabilityResult,
     features: FeatureSnapshot | None = None,
     volatility_adjustment: VolatilityAdjustedResult | None = None,
+    price_model: PriceModelEvaluation | None = None,
 ) -> str:
     lines = [
         f"{result.pair} barrier analysis",
@@ -62,6 +64,27 @@ def format_summary(
         if volatility_adjustment.used_fallback and volatility_adjustment.fallback_reason:
             lines.append(f"Fallback: {volatility_adjustment.fallback_reason}")
 
+    if price_model:
+        lines.extend(
+            [
+                "",
+                "Price-only model estimate:",
+                f"Model probability: {_format_optional_pct(price_model.model_probability)}",
+                f"Train rows: {price_model.train_rows}",
+                f"Test rows: {price_model.test_rows}",
+                f"Train hit rate: {_format_optional_pct(price_model.positive_rate_train)}",
+                f"Test hit rate: {_format_optional_pct(price_model.positive_rate_test)}",
+                f"Baseline probability: {_format_optional_pct(price_model.baseline_probability)}",
+                f"Model Brier score: {_format_optional_number(price_model.model_brier_score)}",
+                f"Baseline Brier score: {_format_optional_number(price_model.baseline_brier_score)}",
+                f"Model log loss: {_format_optional_number(price_model.model_log_loss)}",
+                f"Baseline log loss: {_format_optional_number(price_model.baseline_log_loss)}",
+                f"Model comparison: {_model_comparison_note(price_model)}",
+            ]
+        )
+        if price_model.used_fallback and price_model.fallback_reason:
+            lines.append(f"Fallback: {price_model.fallback_reason}")
+
     if features:
         lines.extend(
             [
@@ -101,3 +124,19 @@ def _format_optional_pct(value: float | None) -> str:
     if value is None:
         return "n/a"
     return f"{value:.2f}%"
+
+
+def _format_optional_number(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    return f"{value:.4f}"
+
+
+def _model_comparison_note(price_model: PriceModelEvaluation) -> str:
+    if price_model.model_brier_score is None or price_model.baseline_brier_score is None:
+        return "n/a"
+    if price_model.model_brier_score < price_model.baseline_brier_score:
+        return "model beat baseline on Brier score"
+    if price_model.model_brier_score > price_model.baseline_brier_score:
+        return "model underperformed baseline on Brier score"
+    return "model tied baseline on Brier score"

@@ -165,6 +165,23 @@ target_barrier_hit over the forward expiry window
 
 Features are calculated using only data available on or before each synthetic trade date.
 
+The CLI also trains an experimental price-only logistic regression model and compares it against a baseline probability on a walk-forward split:
+
+```text
+Price-only model estimate:
+Model probability: 41.04%
+Train rows: 192
+Test rows: 83
+Train hit rate: 78.65%
+Test hit rate: 100.00%
+Baseline probability: 78.65%
+Model Brier score: 0.3597
+Baseline Brier score: 0.0456
+Model comparison: model underperformed baseline on Brier score
+```
+
+The model probability should not be trusted unless its validation metrics beat or usefully complement the baseline.
+
 ## Calculation Summary
 
 For the target trade:

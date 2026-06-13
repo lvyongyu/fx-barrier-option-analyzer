@@ -8,6 +8,7 @@ import json
 from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import download_audusd_prices
 from src.feature_engine import build_feature_snapshot
+from src.price_model import evaluate_price_only_model
 from src.repository import (
     connect,
     init_db,
@@ -91,14 +92,15 @@ def main() -> None:
                 "volatility_adjustment_id": volatility_adjustment_id,
             }
     exported_training_dataset = None
+    training_dataset = build_price_only_training_dataset(trade, prices)
     if args.export_training_dataset:
-        training_dataset = build_price_only_training_dataset(trade, prices)
         training_dataset.to_csv(args.export_training_dataset, index=False)
         exported_training_dataset = {
             "path": args.export_training_dataset,
             "rows": len(training_dataset),
             "columns": list(training_dataset.columns),
         }
+    price_model_evaluation = evaluate_price_only_model(training_dataset, asdict(features))
     if args.json:
         print(
             json.dumps(
@@ -106,6 +108,7 @@ def main() -> None:
                     "result": asdict(result),
                     "features": asdict(features),
                     "volatility_adjustment": asdict(volatility_adjustment),
+                    "price_model": asdict(price_model_evaluation),
                     "saved_ids": saved_ids,
                     "exported_training_dataset": exported_training_dataset,
                 },
@@ -114,7 +117,7 @@ def main() -> None:
             )
         )
     else:
-        print(format_summary(result, features, volatility_adjustment))
+        print(format_summary(result, features, volatility_adjustment, price_model_evaluation))
 
 
 if __name__ == "__main__":
