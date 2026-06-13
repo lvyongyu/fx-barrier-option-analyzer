@@ -131,6 +131,40 @@ def test_format_summary_includes_external_features() -> None:
     assert "VIX level: 15.4000" in summary
 
 
+def test_format_summary_includes_price_plus_external_model() -> None:
+    result = result_with_path(
+        BarrierPathResult(
+            is_applicable=False,
+            reason="expiry_date is after available market data (2026-06-12)",
+            barrier_hit=False,
+            hit_date=None,
+            max_high=None,
+            min_low=None,
+            days_to_hit=None,
+        )
+    )
+    price_plus_external_model = PriceModelEvaluation(
+        model_probability=52.0,
+        train_rows=90,
+        test_rows=40,
+        positive_rate_train=70.0,
+        positive_rate_test=72.0,
+        baseline_probability=70.0,
+        model_brier_score=0.18,
+        baseline_brier_score=0.22,
+        model_log_loss=0.4,
+        baseline_log_loss=0.6,
+        used_fallback=False,
+        fallback_reason=None,
+    )
+
+    summary = format_summary(result, price_plus_external_model=price_plus_external_model)
+
+    assert "Price + external model estimate:" in summary
+    assert "Model probability: 52.00%" in summary
+    assert "Model comparison: model beat baseline on Brier score" in summary
+
+
 def result_with_path(actual_path: BarrierPathResult) -> TouchProbabilityResult:
     return TouchProbabilityResult(
         product_type="Ratio Convertible Forward",

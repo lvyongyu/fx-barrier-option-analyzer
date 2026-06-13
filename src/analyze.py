@@ -9,7 +9,7 @@ from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import download_audusd_prices
 from src.external_features import build_external_feature_snapshot, download_external_market_data
 from src.feature_engine import build_feature_snapshot
-from src.price_model import evaluate_price_only_model
+from src.price_model import evaluate_price_only_model, evaluate_price_plus_external_model
 from src.repository import (
     connect,
     init_db,
@@ -20,7 +20,7 @@ from src.repository import (
     upsert_market_prices,
 )
 from src.reporting import format_summary
-from src.training_dataset import build_price_only_training_dataset
+from src.training_dataset import build_price_only_training_dataset, build_price_plus_external_training_dataset
 from src.volatility_adjustment import calculate_volatility_adjusted_probability
 
 
@@ -75,6 +75,7 @@ def main() -> None:
         current_features=features,
     )
     external_features = None
+    external_data = None
     if args.include_external_features:
         external_data = download_external_market_data(period=args.period)
         external_features = build_external_feature_snapshot(
@@ -111,6 +112,19 @@ def main() -> None:
             "columns": list(training_dataset.columns),
         }
     price_model_evaluation = evaluate_price_only_model(training_dataset, asdict(features))
+    price_plus_external_model_evaluation = None
+    if external_data and external_features:
+        external_training_dataset = build_price_plus_external_training_dataset(
+            trade,
+            prices,
+            external_data["dxy"],
+            external_data["vix"],
+        )
+        current_external_features = {**asdict(features), **asdict(external_features)}
+        price_plus_external_model_evaluation = evaluate_price_plus_external_model(
+            external_training_dataset,
+            current_external_features,
+        )
     if args.json:
         print(
             json.dumps(
@@ -120,6 +134,11 @@ def main() -> None:
                     "external_features": asdict(external_features) if external_features else None,
                     "volatility_adjustment": asdict(volatility_adjustment),
                     "price_model": asdict(price_model_evaluation),
+                    "price_plus_external_model": (
+                        asdict(price_plus_external_model_evaluation)
+                        if price_plus_external_model_evaluation
+                        else None
+                    ),
                     "saved_ids": saved_ids,
                     "exported_training_dataset": exported_training_dataset,
                 },
@@ -128,7 +147,16 @@ def main() -> None:
             )
         )
     else:
-        print(format_summary(result, features, volatility_adjustment, price_model_evaluation, external_features))
+        print(
+            format_summary(
+                result,
+                features,
+                volatility_adjustment,
+                price_model_evaluation,
+                external_features,
+                price_plus_external_model_evaluation,
+            )
+        )
 
 
 if __name__ == "__main__":

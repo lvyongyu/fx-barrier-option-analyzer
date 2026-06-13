@@ -207,7 +207,8 @@ Model comparison: model underperformed baseline on Brier score
 
 The model probability should not be trusted unless its validation metrics beat or usefully complement the baseline.
 
-Add `--include-external-features` to download DXY and VIX and print external market context:
+Add `--include-external-features` to download DXY and VIX, print external market context,
+and train a second experimental model that uses both price features and external features:
 
 ```bash
 python -m src.analyze \
@@ -232,7 +233,18 @@ VIX level: 17.6800
 VIX change 20d: -0.7500
 ```
 
-These external features are displayed for context only. They are not yet included in the probability model.
+Example external model output:
+
+```text
+Price + external model estimate:
+Model probability: 48.12%
+Train rows: 174
+Test rows: 75
+Model comparison: model beat baseline on Brier score
+```
+
+The external model is still experimental. Treat it as useful only when its walk-forward
+metrics improve on the baseline or explain a clear difference from the price-only model.
 
 ## Calculation Summary
 

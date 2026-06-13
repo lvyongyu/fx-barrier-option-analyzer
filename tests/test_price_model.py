@@ -5,8 +5,13 @@ import pytest
 
 from src.barrier_engine import Trade
 from src.feature_engine import build_feature_snapshot
-from src.price_model import evaluate_price_only_model, prepare_model_dataset
-from src.training_dataset import build_price_only_training_dataset, price_only_feature_columns
+from src.price_model import evaluate_price_only_model, evaluate_price_plus_external_model, prepare_model_dataset
+from src.training_dataset import (
+    build_price_only_training_dataset,
+    external_feature_columns,
+    price_only_feature_columns,
+    price_plus_external_feature_columns,
+)
 
 
 def test_evaluate_price_only_model_returns_probability_and_metrics() -> None:
@@ -52,6 +57,29 @@ def test_evaluate_price_only_model_falls_back_for_single_class_target() -> None:
     assert evaluation.used_fallback is True
     assert evaluation.model_probability is None
     assert "only one class" in evaluation.fallback_reason
+
+
+def test_evaluate_price_plus_external_model_uses_external_columns() -> None:
+    prices = make_model_prices()
+    trade = Trade(
+        pair="AUD/USD",
+        trade_date=date(2026, 9, 17),
+        spot=1.05,
+        strike=1.06,
+        barrier=1.065,
+        expiry_date=date(2026, 10, 2),
+    )
+    dataset = build_price_only_training_dataset(trade, prices, min_lookback_days=60)
+    for index, column in enumerate(external_feature_columns(), start=1):
+        dataset[column] = index + (dataset.index % 7) * 0.1
+    current_features = build_feature_snapshot(trade, prices).__dict__
+    current_features.update({column: 1.0 for column in external_feature_columns()})
+
+    evaluation = evaluate_price_plus_external_model(dataset, current_features, train_fraction=0.7)
+
+    assert evaluation.used_fallback is False
+    assert evaluation.model_probability is not None
+    assert prepare_model_dataset(dataset, price_plus_external_feature_columns()).shape[0] == len(dataset)
 
 
 def test_prepare_model_dataset_requires_feature_columns() -> None:

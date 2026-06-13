@@ -8,7 +8,7 @@ from sklearn.metrics import brier_score_loss, log_loss
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from src.training_dataset import TARGET_COLUMN, price_only_feature_columns
+from src.training_dataset import TARGET_COLUMN, price_only_feature_columns, price_plus_external_feature_columns
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,34 @@ def evaluate_price_only_model(
     current_features: dict[str, float | int | None],
     train_fraction: float = 0.7,
 ) -> PriceModelEvaluation:
-    prepared = prepare_model_dataset(dataset)
+    return evaluate_probability_model(
+        dataset,
+        current_features,
+        feature_columns=price_only_feature_columns(),
+        train_fraction=train_fraction,
+    )
+
+
+def evaluate_price_plus_external_model(
+    dataset: pd.DataFrame,
+    current_features: dict[str, float | int | None],
+    train_fraction: float = 0.7,
+) -> PriceModelEvaluation:
+    return evaluate_probability_model(
+        dataset,
+        current_features,
+        feature_columns=price_plus_external_feature_columns(),
+        train_fraction=train_fraction,
+    )
+
+
+def evaluate_probability_model(
+    dataset: pd.DataFrame,
+    current_features: dict[str, float | int | None],
+    feature_columns: list[str],
+    train_fraction: float = 0.7,
+) -> PriceModelEvaluation:
+    prepared = prepare_model_dataset(dataset, feature_columns=feature_columns)
     if prepared.empty:
         return _fallback("training dataset has no usable rows")
 
@@ -48,7 +75,6 @@ def evaluate_price_only_model(
     if train[TARGET_COLUMN].nunique() < 2:
         return _fallback("training split target has only one class")
 
-    feature_columns = price_only_feature_columns()
     model = build_price_only_model()
     model.fit(train[feature_columns], train[TARGET_COLUMN].astype(int))
 
@@ -91,8 +117,10 @@ def build_price_only_model() -> Pipeline:
     )
 
 
-def prepare_model_dataset(dataset: pd.DataFrame) -> pd.DataFrame:
-    required = ["as_of_date", TARGET_COLUMN, *price_only_feature_columns()]
+def prepare_model_dataset(dataset: pd.DataFrame, feature_columns: list[str] | None = None) -> pd.DataFrame:
+    if feature_columns is None:
+        feature_columns = price_only_feature_columns()
+    required = ["as_of_date", TARGET_COLUMN, *feature_columns]
     missing = [column for column in required if column not in dataset.columns]
     if missing:
         raise ValueError(f"training dataset missing columns: {', '.join(missing)}")
@@ -100,7 +128,7 @@ def prepare_model_dataset(dataset: pd.DataFrame) -> pd.DataFrame:
     prepared = dataset.copy()
     prepared["as_of_date"] = pd.to_datetime(prepared["as_of_date"])
     prepared = prepared.sort_values("as_of_date").reset_index(drop=True)
-    prepared = prepared.dropna(subset=price_only_feature_columns() + [TARGET_COLUMN])
+    prepared = prepared.dropna(subset=feature_columns + [TARGET_COLUMN])
     return prepared
 
 

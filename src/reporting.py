@@ -13,6 +13,7 @@ def format_summary(
     volatility_adjustment: VolatilityAdjustedResult | None = None,
     price_model: PriceModelEvaluation | None = None,
     external_features: ExternalFeatureSnapshot | None = None,
+    price_plus_external_model: PriceModelEvaluation | None = None,
 ) -> str:
     lines = [
         f"{result.pair} barrier analysis",
@@ -67,25 +68,10 @@ def format_summary(
             lines.append(f"Fallback: {volatility_adjustment.fallback_reason}")
 
     if price_model:
-        lines.extend(
-            [
-                "",
-                "Price-only model estimate:",
-                f"Model probability: {_format_optional_pct(price_model.model_probability)}",
-                f"Train rows: {price_model.train_rows}",
-                f"Test rows: {price_model.test_rows}",
-                f"Train hit rate: {_format_optional_pct(price_model.positive_rate_train)}",
-                f"Test hit rate: {_format_optional_pct(price_model.positive_rate_test)}",
-                f"Baseline probability: {_format_optional_pct(price_model.baseline_probability)}",
-                f"Model Brier score: {_format_optional_number(price_model.model_brier_score)}",
-                f"Baseline Brier score: {_format_optional_number(price_model.baseline_brier_score)}",
-                f"Model log loss: {_format_optional_number(price_model.model_log_loss)}",
-                f"Baseline log loss: {_format_optional_number(price_model.baseline_log_loss)}",
-                f"Model comparison: {_model_comparison_note(price_model)}",
-            ]
-        )
-        if price_model.used_fallback and price_model.fallback_reason:
-            lines.append(f"Fallback: {price_model.fallback_reason}")
+        _append_model_section(lines, "Price-only model estimate:", price_model)
+
+    if price_plus_external_model:
+        _append_model_section(lines, "Price + external model estimate:", price_plus_external_model)
 
     if external_features:
         lines.extend(
@@ -145,6 +131,28 @@ def _format_optional_number(value: float | None) -> str:
     if value is None:
         return "n/a"
     return f"{value:.4f}"
+
+
+def _append_model_section(lines: list[str], title: str, price_model: PriceModelEvaluation) -> None:
+    lines.extend(
+        [
+            "",
+            title,
+            f"Model probability: {_format_optional_pct(price_model.model_probability)}",
+            f"Train rows: {price_model.train_rows}",
+            f"Test rows: {price_model.test_rows}",
+            f"Train hit rate: {_format_optional_pct(price_model.positive_rate_train)}",
+            f"Test hit rate: {_format_optional_pct(price_model.positive_rate_test)}",
+            f"Baseline probability: {_format_optional_pct(price_model.baseline_probability)}",
+            f"Model Brier score: {_format_optional_number(price_model.model_brier_score)}",
+            f"Baseline Brier score: {_format_optional_number(price_model.baseline_brier_score)}",
+            f"Model log loss: {_format_optional_number(price_model.model_log_loss)}",
+            f"Baseline log loss: {_format_optional_number(price_model.baseline_log_loss)}",
+            f"Model comparison: {_model_comparison_note(price_model)}",
+        ]
+    )
+    if price_model.used_fallback and price_model.fallback_reason:
+        lines.append(f"Fallback: {price_model.fallback_reason}")
 
 
 def _model_comparison_note(price_model: PriceModelEvaluation) -> str:

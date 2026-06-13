@@ -5,6 +5,7 @@ from dataclasses import asdict
 import pandas as pd
 
 from src.barrier_engine import Trade, calculate_distance_pct, normalize_direction, normalize_prices
+from src.external_features import build_external_feature_snapshot
 from src.feature_engine import build_feature_snapshot
 
 
@@ -72,6 +73,38 @@ def build_price_only_training_dataset(
     return pd.DataFrame(rows)
 
 
+def build_price_plus_external_training_dataset(
+    trade: Trade,
+    prices: pd.DataFrame,
+    dxy: pd.DataFrame,
+    vix: pd.DataFrame,
+    min_lookback_days: int = 60,
+) -> pd.DataFrame:
+    dataset = build_price_only_training_dataset(
+        trade,
+        prices,
+        min_lookback_days=min_lookback_days,
+    )
+    if dataset.empty:
+        return dataset
+
+    rows: list[dict[str, object]] = []
+    for row in dataset.to_dict("records"):
+        external_snapshot = build_external_feature_snapshot(
+            dxy,
+            vix,
+            as_of_date=row["as_of_date"],
+        )
+        external_row = asdict(external_snapshot)
+        row["external_as_of_date"] = external_row.pop("as_of_date")
+        row.update(external_row)
+        if _has_missing_external_features(row):
+            continue
+        rows.append(row)
+
+    return pd.DataFrame(rows)
+
+
 def price_only_feature_columns() -> list[str]:
     return [
         "days_to_expiry",
@@ -87,5 +120,22 @@ def price_only_feature_columns() -> list[str]:
     ]
 
 
+def external_feature_columns() -> list[str]:
+    return [
+        "dxy_return_20d",
+        "dxy_trend_60d",
+        "vix_level",
+        "vix_change_20d",
+    ]
+
+
+def price_plus_external_feature_columns() -> list[str]:
+    return [*price_only_feature_columns(), *external_feature_columns()]
+
+
 def _has_missing_model_features(row: dict[str, object]) -> bool:
     return any(pd.isna(row[column]) for column in price_only_feature_columns())
+
+
+def _has_missing_external_features(row: dict[str, object]) -> bool:
+    return any(pd.isna(row[column]) for column in external_feature_columns())
