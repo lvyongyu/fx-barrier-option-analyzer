@@ -1,6 +1,7 @@
 from datetime import date
 
 from src.barrier_engine import BarrierPathResult, TouchProbabilityResult
+from src.external_features import ExternalFeatureSnapshot
 from src.price_model import PriceModelEvaluation
 from src.reporting import format_summary
 
@@ -101,6 +102,33 @@ def test_format_summary_includes_price_model_comparison() -> None:
     assert "Price-only model estimate:" in summary
     assert "Model probability: 41.00%" in summary
     assert "Model comparison: model underperformed baseline on Brier score" in summary
+
+
+def test_format_summary_includes_external_features() -> None:
+    result = result_with_path(
+        BarrierPathResult(
+            is_applicable=False,
+            reason="expiry_date is after available market data (2026-06-12)",
+            barrier_hit=False,
+            hit_date=None,
+            max_high=None,
+            min_low=None,
+            days_to_hit=None,
+        )
+    )
+    external = ExternalFeatureSnapshot(
+        as_of_date=date(2026, 6, 13),
+        dxy_return_20d=1.2,
+        dxy_trend_60d=-0.5,
+        vix_level=15.4,
+        vix_change_20d=2.1,
+    )
+
+    summary = format_summary(result, external_features=external)
+
+    assert "External market features:" in summary
+    assert "DXY return 20d: 1.20%" in summary
+    assert "VIX level: 15.4000" in summary
 
 
 def result_with_path(actual_path: BarrierPathResult) -> TouchProbabilityResult:

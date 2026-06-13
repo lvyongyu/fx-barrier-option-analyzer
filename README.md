@@ -207,6 +207,33 @@ Model comparison: model underperformed baseline on Brier score
 
 The model probability should not be trusted unless its validation metrics beat or usefully complement the baseline.
 
+Add `--include-external-features` to download DXY and VIX and print external market context:
+
+```bash
+python -m src.analyze \
+  --trade-date 2026-04-15 \
+  --expiry-date 2026-12-30 \
+  --spot 0.6800 \
+  --strike 0.6850 \
+  --barrier 0.6935 \
+  --barrier-direction up \
+  --period 2y \
+  --include-external-features
+```
+
+Example external features:
+
+```text
+External market features:
+As of: 2026-06-12
+DXY return 20d: 0.88%
+DXY trend 60d: -0.34%
+VIX level: 17.6800
+VIX change 20d: -0.7500
+```
+
+These external features are displayed for context only. They are not yet included in the probability model.
+
 ## Calculation Summary
 
 For the target trade:

@@ -226,6 +226,7 @@ Exit criteria:
 - Each feature has a documented source.
 - Each feature is lagged correctly to avoid look-ahead leakage.
 - Model evaluation shows whether the feature improves calibration.
+- Status: first DXY/VIX feature snapshot complete; not yet included in model training.
 
 ## Phase 7 - Minimal UI
 

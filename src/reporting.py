@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from src.barrier_engine import TouchProbabilityResult
+from src.external_features import ExternalFeatureSnapshot
 from src.feature_engine import FeatureSnapshot
 from src.price_model import PriceModelEvaluation
 from src.volatility_adjustment import VolatilityAdjustedResult
@@ -11,6 +12,7 @@ def format_summary(
     features: FeatureSnapshot | None = None,
     volatility_adjustment: VolatilityAdjustedResult | None = None,
     price_model: PriceModelEvaluation | None = None,
+    external_features: ExternalFeatureSnapshot | None = None,
 ) -> str:
     lines = [
         f"{result.pair} barrier analysis",
@@ -84,6 +86,19 @@ def format_summary(
         )
         if price_model.used_fallback and price_model.fallback_reason:
             lines.append(f"Fallback: {price_model.fallback_reason}")
+
+    if external_features:
+        lines.extend(
+            [
+                "",
+                "External market features:",
+                f"As of: {external_features.as_of_date}",
+                f"DXY return 20d: {_format_optional_pct(external_features.dxy_return_20d)}",
+                f"DXY trend 60d: {_format_optional_pct(external_features.dxy_trend_60d)}",
+                f"VIX level: {_format_optional_number(external_features.vix_level)}",
+                f"VIX change 20d: {_format_optional_number(external_features.vix_change_20d)}",
+            ]
+        )
 
     if features:
         lines.extend(

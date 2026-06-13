@@ -7,6 +7,7 @@ import json
 
 from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import download_audusd_prices
+from src.external_features import build_external_feature_snapshot, download_external_market_data
 from src.feature_engine import build_feature_snapshot
 from src.price_model import evaluate_price_only_model
 from src.repository import (
@@ -41,6 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expiry-time-zone", default="Tokyo")
     parser.add_argument("--save-db", help="optional SQLite path for saving research data")
     parser.add_argument("--export-training-dataset", help="optional CSV path for exporting price-only training data")
+    parser.add_argument("--include-external-features", action="store_true", help="download DXY/VIX and print external features")
     parser.add_argument("--json", action="store_true", help="print raw JSON instead of a readable summary")
     return parser.parse_args()
 
@@ -72,6 +74,14 @@ def main() -> None:
         baseline_probability=result.touch_probability,
         current_features=features,
     )
+    external_features = None
+    if args.include_external_features:
+        external_data = download_external_market_data(period=args.period)
+        external_features = build_external_feature_snapshot(
+            external_data["dxy"],
+            external_data["vix"],
+            as_of_date=features.as_of_date,
+        )
     saved_ids = None
     if args.save_db:
         with connect(args.save_db) as connection:
@@ -107,6 +117,7 @@ def main() -> None:
                 {
                     "result": asdict(result),
                     "features": asdict(features),
+                    "external_features": asdict(external_features) if external_features else None,
                     "volatility_adjustment": asdict(volatility_adjustment),
                     "price_model": asdict(price_model_evaluation),
                     "saved_ids": saved_ids,
@@ -117,7 +128,7 @@ def main() -> None:
             )
         )
     else:
-        print(format_summary(result, features, volatility_adjustment, price_model_evaluation))
+        print(format_summary(result, features, volatility_adjustment, price_model_evaluation, external_features))
 
 
 if __name__ == "__main__":
