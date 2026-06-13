@@ -66,6 +66,31 @@ yfinance.download("AUDUSD=X", period="2y")
 
 Automatic download and analysis are currently scoped to `AUD/USD` only.
 
+## Confirmation Structure
+
+Real Corpay confirmations may contain multiple scheduled expiries. The Uniwell confirmation maps to:
+
+```text
+Confirmation
+  2026-08-28
+    4096154 European
+    4096155 Knockout
+  2026-09-29
+    4096156 European
+    4096157 Knockout
+  2026-10-29
+    4096158 European
+    4096159 Knockout
+```
+
+The code currently supports manual confirmation mapping with:
+
+```python
+from src.confirmation import build_uniwell_confirmation_example, barrier_legs_to_trades
+```
+
+It does not yet automatically parse PDFs. Each knockout leg is converted into a per-expiry `Trade` for analysis.
+
 The CLI also prints a current price-derived feature snapshot:
 
 ```text

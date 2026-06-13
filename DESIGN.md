@@ -75,6 +75,29 @@ The downstream payoff scenario depends on whether the barrier breaches, but the 
 BarrierBreachBeforeExpiry = true / false
 ```
 
+### Confirmation Structure
+
+A real Corpay confirmation can contain multiple scheduled expiries. Each expiry may contain a vanilla European leg and a barrier/knockout leg.
+
+Example from the Uniwell confirmation:
+
+| Expiry | European ref | Knockout ref | Strike | Barrier | Window |
+| --- | --- | --- | --- | --- | --- |
+| 2026-08-28 | 4096154 | 4096155 | 0.6900 | 0.7050 | 2026-04-15 to 2026-08-28 |
+| 2026-09-29 | 4096156 | 4096157 | 0.6900 | 0.7050 | 2026-04-15 to 2026-09-29 |
+| 2026-10-29 | 4096158 | 4096159 | 0.6900 | 0.7050 | 2026-04-15 to 2026-10-29 |
+
+The analyzer should therefore support:
+
+```text
+Confirmation
+  ScheduledExpiry[]
+    OptionLeg[]
+    BarrierWindow
+```
+
+The current implementation maps each knockout leg into one per-expiry `Trade` that can be analyzed independently.
+
 ## 3. MVP Scope
 
 The MVP should stay deliberately small.
@@ -295,6 +318,44 @@ Column names should be treated case-insensitively.
 | protected_amount | decimal | Base protected notional |
 | ratio_amount | decimal | Leveraged notional if applicable |
 | option_type | string | Optional: call/put |
+
+### Confirmation
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| customer | string | Customer legal name |
+| trade_date | date | Confirmation trade date |
+| pair | string | Current scope: AUD/USD |
+| base_currency | string | Example: AUD |
+| quote_terms | string | Example: USD per 1 AUD |
+| references | list | Confirmation reference numbers |
+| expiries | list | Scheduled expiries |
+
+### ScheduledExpiry
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| expiration_date | date | Option expiry date |
+| settlement_date | date | Settlement date |
+| legs | list | European and barrier legs |
+
+### OptionLeg
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| reference | string | Corpay reference number |
+| option_type | string | European or Knockout |
+| option_seller | string | Seller name |
+| option_buyer | string | Buyer name |
+| strike | decimal | Strike rate |
+| barrier | decimal | Barrier level, if applicable |
+| barrier_direction | string | Required for barrier legs |
+| window_start_date | date | Barrier window start |
+| window_end_date | date | Barrier window end |
+| call_currency | string | Call currency |
+| call_amount | decimal | Call amount |
+| put_currency | string | Put currency |
+| put_amount | decimal | Put amount |
 
 ### BacktestResult
 

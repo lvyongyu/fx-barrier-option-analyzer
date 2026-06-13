@@ -320,12 +320,12 @@ Exit criteria:
 
 ## Recommended Immediate Next Step
 
-Build Phase 5:
+Build confirmation-level analysis:
 
 ```text
-improve price-only model validation
-add calibration bucket report
-test longer research windows such as period="10y" or period="max"
+analyze all knockout legs in one confirmation
+print one probability row per scheduled expiry
+keep PDF parsing manual for now
 ```
 
 Do not build Streamlit or FastAPI until the forward-estimate logic is useful enough to show.
