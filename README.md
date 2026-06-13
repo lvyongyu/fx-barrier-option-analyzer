@@ -29,6 +29,7 @@ pytest
 
 ```bash
 python -m src.analyze \
+  --pair AUD/USD \
   --trade-date 2026-04-15 \
   --expiry-date 2026-08-28 \
   --spot 0.6500 \
@@ -38,11 +39,34 @@ python -m src.analyze \
   --period 2y
 ```
 
+Corpay-style Ratio Convertible Forward example:
+
+```bash
+python -m src.analyze \
+  --pair AUD/USD \
+  --product-type "Ratio Convertible Forward" \
+  --client-direction Importer \
+  --protected-amount 500000 \
+  --ratio-amount 1000000 \
+  --amount-currency USD \
+  --trade-date 2026-04-15 \
+  --expiry-date 2026-12-30 \
+  --spot 0.6800 \
+  --strike 0.6850 \
+  --barrier 0.6935 \
+  --barrier-direction up \
+  --barrier-level-period continuous \
+  --expiry-time-zone Tokyo \
+  --period 2y
+```
+
 The default market data source is:
 
 ```python
 yfinance.download("AUDUSD=X", period="2y")
 ```
+
+Automatic download is currently configured for `AUD/USD`. Product schemas already support other pairs such as `AUD/CNH`, but those need a reliable market data source before analysis can run.
 
 By default, the CLI prints a readable summary. Add `--json` if you want the raw structured result:
 

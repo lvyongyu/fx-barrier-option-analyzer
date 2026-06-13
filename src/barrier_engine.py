@@ -15,6 +15,13 @@ class Trade:
     barrier: float
     expiry_date: date
     barrier_direction: str = "up"
+    product_type: str = "Ratio Convertible Forward"
+    client_direction: str | None = None
+    protected_amount: float | None = None
+    ratio_amount: float | None = None
+    amount_currency: str | None = None
+    barrier_level_period: str = "continuous"
+    expiry_time_zone: str = "Tokyo"
 
 
 @dataclass(frozen=True)
@@ -30,9 +37,17 @@ class BarrierPathResult:
 
 @dataclass(frozen=True)
 class TouchProbabilityResult:
+    product_type: str
+    client_direction: str | None
     pair: str
     spot: float
+    strike: float
     barrier: float
+    protected_amount: float | None
+    ratio_amount: float | None
+    amount_currency: str | None
+    barrier_level_period: str
+    expiry_time_zone: str
     days_to_expiry: int
     distance_pct: float
     sample_count: int
@@ -185,9 +200,17 @@ def calculate_touch_probability(trade: Trade, prices: pd.DataFrame) -> TouchProb
     probability = touch_count / sample_count * 100 if sample_count else 0.0
 
     return TouchProbabilityResult(
+        product_type=trade.product_type,
+        client_direction=trade.client_direction,
         pair=trade.pair,
         spot=trade.spot,
+        strike=trade.strike,
         barrier=trade.barrier,
+        protected_amount=trade.protected_amount,
+        ratio_amount=trade.ratio_amount,
+        amount_currency=trade.amount_currency,
+        barrier_level_period=trade.barrier_level_period,
+        expiry_time_zone=trade.expiry_time_zone,
         days_to_expiry=days_to_expiry,
         distance_pct=distance_pct * 100,
         sample_count=sample_count,

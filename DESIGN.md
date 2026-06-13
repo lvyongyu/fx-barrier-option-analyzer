@@ -48,29 +48,25 @@ The answer should eventually combine:
 - Macro and risk-regime features.
 - Model calibration and confidence.
 
-### Real Product Example
+### Real Product Examples
 
-The system should support Corpay-style `Ratio Convertible Forward - Importer` structures.
+The system should support Corpay-style `Ratio Convertible Forward` structures for both importers and exporters.
 
-Example fields from a real trade sheet:
+Example fields from real trade sheets:
 
-| Field | Example |
-| --- | --- |
-| Product type | Ratio Convertible Forward |
-| Client direction | Importer |
-| Pair | AUD/USD |
-| Protected amount | USD 500,000 |
-| Ratio amount | USD 1,000,000 |
-| Strike rate | 0.6850 |
-| Barrier level | 0.6935 |
-| Barrier level period | Continuous |
-| Expiry date | 2026-12-30 |
-| Expiry time | 3:00 p.m. Tokyo time |
+| Product | Direction | Pair | Protected amount | Ratio amount | Strike | Barrier | Barrier period | Expiry |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Ratio Convertible Forward | Importer | AUD/USD | USD 500,000 | USD 1,000,000 | 0.6850 | 0.6935 | Continuous | 2026-12-30 |
+| Ratio Convertible Forward | Importer | AUD/USD | USD 1,000,000 | USD 2,000,000 | 0.6850 | 0.6935 | Continuous | 2026-12-30 |
+| Ratio Convertible Forward | Exporter | AUD/CNH | AUD 1,000,000 | AUD 2,000,000 | 4.8400 | 4.8000 | Continuous | 2027-09-20 |
+| Ratio Convertible Forward | Exporter | AUD/CNH | AUD 1,000,000 | AUD 2,000,000 | 4.8900 | 4.8700 | Continuous | 2027-12-29 |
+
+Options expire at 3:00 p.m. Tokyo time in these examples.
 
 For this product, the modeling target is:
 
 ```text
-Will AUD/USD breach 0.6935 at any point during the continuous barrier period before expiry?
+Will the spot rate breach the barrier at any point during the continuous barrier period before expiry?
 ```
 
 The downstream payoff scenario depends on whether the barrier breaches, but the first modeling problem remains the path event:

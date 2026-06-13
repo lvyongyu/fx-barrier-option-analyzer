@@ -5,17 +5,40 @@ from src.barrier_engine import TouchProbabilityResult
 
 def format_summary(result: TouchProbabilityResult) -> str:
     lines = [
-        "AUD/USD barrier analysis",
-        "",
-        f"Spot: {result.spot:.4f}",
-        f"Barrier: {result.barrier:.4f}",
-        f"Distance to barrier: {result.distance_pct:.2f}%",
-        f"Days to expiry: {result.days_to_expiry}",
-        "",
-        f"Historical samples: {result.sample_count}",
-        f"Touch count: {result.touch_count}",
-        f"Historical touch probability: {result.touch_probability:.2f}%",
+        f"{result.pair} barrier analysis",
+        f"Product: {result.product_type}",
     ]
+    if result.client_direction:
+        lines.append(f"Client direction: {result.client_direction}")
+
+    lines.extend(
+        [
+            "",
+            f"Spot: {result.spot:.4f}",
+            f"Strike: {result.strike:.4f}",
+            f"Barrier: {result.barrier:.4f}",
+            f"Barrier period: {result.barrier_level_period}",
+            f"Distance to barrier: {result.distance_pct:.2f}%",
+            f"Days to expiry: {result.days_to_expiry}",
+        ]
+    )
+
+    if result.protected_amount is not None:
+        suffix = f" {result.amount_currency}" if result.amount_currency else ""
+        lines.append(f"Protected amount: {result.protected_amount:,.0f}{suffix}")
+    if result.ratio_amount is not None:
+        suffix = f" {result.amount_currency}" if result.amount_currency else ""
+        lines.append(f"Ratio amount: {result.ratio_amount:,.0f}{suffix}")
+
+    lines.extend(
+        [
+            f"Expiry time zone: {result.expiry_time_zone}",
+            "",
+            f"Historical samples: {result.sample_count}",
+            f"Touch count: {result.touch_count}",
+            f"Historical touch probability: {result.touch_probability:.2f}%",
+        ]
+    )
 
     actual_path = result.actual_path
     lines.extend(["", "Actual path check:"])
