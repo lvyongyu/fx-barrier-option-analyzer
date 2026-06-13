@@ -43,6 +43,62 @@ class Confirmation:
     expiry_time_zone: str = "Tokyo"
 
 
+@dataclass(frozen=True)
+class CorpayTradeInput:
+    product_type: str
+    client_direction: str
+    pair: str
+    protected_amount: float
+    ratio_amount: float
+    amount_currency: str
+    strike: float
+    barrier: float
+    barrier_level_period: str
+    expiry_date: date
+    expiry_time_zone: str = "Tokyo"
+    barrier_direction: str = "up"
+
+
+def corpay_trade_input_to_trade(
+    trade_input: CorpayTradeInput,
+    trade_date: date,
+    spot: float,
+) -> Trade:
+    return Trade(
+        pair=trade_input.pair,
+        trade_date=trade_date,
+        spot=spot,
+        strike=trade_input.strike,
+        barrier=trade_input.barrier,
+        expiry_date=trade_input.expiry_date,
+        barrier_direction=trade_input.barrier_direction,
+        product_type=trade_input.product_type,
+        client_direction=trade_input.client_direction,
+        protected_amount=trade_input.protected_amount,
+        ratio_amount=trade_input.ratio_amount,
+        amount_currency=trade_input.amount_currency,
+        barrier_level_period=trade_input.barrier_level_period,
+        expiry_time_zone=trade_input.expiry_time_zone,
+    )
+
+
+def build_corpay_screenshot_input_example() -> CorpayTradeInput:
+    return CorpayTradeInput(
+        product_type="Ratio Convertible Forward",
+        client_direction="Importer",
+        pair="AUD/USD",
+        protected_amount=500_000,
+        ratio_amount=1_000_000,
+        amount_currency="USD",
+        strike=0.6850,
+        barrier=0.6935,
+        barrier_level_period="continuous",
+        expiry_date=date(2026, 12, 30),
+        expiry_time_zone="Tokyo",
+        barrier_direction="up",
+    )
+
+
 def barrier_legs_to_trades(
     confirmation: Confirmation,
     spot: float,

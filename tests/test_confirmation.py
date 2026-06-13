@@ -2,7 +2,12 @@ from datetime import date
 
 import pytest
 
-from src.confirmation import barrier_legs_to_trades, build_uniwell_confirmation_example
+from src.confirmation import (
+    barrier_legs_to_trades,
+    build_corpay_screenshot_input_example,
+    build_uniwell_confirmation_example,
+    corpay_trade_input_to_trade,
+)
 
 
 def test_uniwell_confirmation_example_matches_pdf_structure() -> None:
@@ -67,3 +72,32 @@ def test_barrier_legs_to_trades_requires_barrier_direction() -> None:
 
     with pytest.raises(ValueError, match="missing barrier_direction"):
         barrier_legs_to_trades(bad_confirmation, spot=0.6500)
+
+
+def test_corpay_screenshot_input_example_maps_to_trade() -> None:
+    trade_input = build_corpay_screenshot_input_example()
+
+    assert trade_input.product_type == "Ratio Convertible Forward"
+    assert trade_input.client_direction == "Importer"
+    assert trade_input.protected_amount == 500_000
+    assert trade_input.ratio_amount == 1_000_000
+    assert trade_input.amount_currency == "USD"
+    assert trade_input.strike == 0.6850
+    assert trade_input.barrier == 0.6935
+    assert trade_input.barrier_level_period == "continuous"
+    assert trade_input.expiry_date == date(2026, 12, 30)
+
+    trade = corpay_trade_input_to_trade(
+        trade_input,
+        trade_date=date(2026, 4, 15),
+        spot=0.6800,
+    )
+
+    assert trade.pair == "AUD/USD"
+    assert trade.trade_date == date(2026, 4, 15)
+    assert trade.spot == 0.6800
+    assert trade.strike == 0.6850
+    assert trade.barrier == 0.6935
+    assert trade.expiry_date == date(2026, 12, 30)
+    assert trade.barrier_direction == "up"
+    assert trade.expiry_time_zone == "Tokyo"

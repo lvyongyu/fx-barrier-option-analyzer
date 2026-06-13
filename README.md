@@ -40,6 +40,22 @@ python -m src.analyze \
 
 Corpay-style Ratio Convertible Forward example:
 
+The screenshot-style Corpay input maps to:
+
+```text
+Product: Ratio Convertible Forward
+Client direction: Importer
+Protected amount: USD 500,000
+Ratio amount: USD 1,000,000
+Strike rate: 0.6850
+Barrier level: 0.6935
+Barrier level period: continuous
+Expiry date: 2026-12-30
+Expiry time: 3:00 p.m. Tokyo time
+```
+
+The current analyzer still requires manual `trade_date` and `spot`, because the screenshot does not show those fields.
+
 ```bash
 python -m src.analyze \
   --product-type "Ratio Convertible Forward" \
