@@ -35,13 +35,14 @@ Deliverables:
 
 - `barrier_engine.py`
 - `test_barrier_engine.py`
-- `data_loader.py` using `yfinance.download("AUDUSD=X", period="2y")`
+- `data_loader.py` using `yfinance.download("AUDUSD=X", period="2y")` for development
 - Small in-memory fixture data for tests
 - CLI or simple script entry point, optional
 
 Core functions:
 
 - Download and normalize AUD/USD OHLC data.
+- Support longer research windows such as `period="10y"` or `period="max"` for backtesting and training.
 - Calculate `days_to_expiry`.
 - Calculate `distance_pct`.
 - Check actual barrier hit within a trade window.
@@ -62,6 +63,7 @@ Exit criteria:
 - Tests pass locally.
 - Output can reproduce a known hand-worked example.
 - No UI, API, or database logic is mixed into the engine.
+- Scope remains fixed to AUD/USD.
 
 ## Phase 2 - Feature Engine
 
@@ -75,14 +77,20 @@ Deliverables:
 - Feature snapshot for the current trade.
 - Historical feature snapshots for synthetic trade dates.
 - Tests proving no look-ahead leakage.
+- AUD/USD-only assumptions documented explicitly.
 
-Core features:
+Trade metadata:
 
 - `product_type`
 - `client_direction`
 - `protected_amount`
 - `ratio_amount`
 - `barrier_level_period`
+
+These fields describe the trade and report, but they should not automatically become predictive model features.
+
+Core predictive features:
+
 - `distance_pct`
 - `days_to_expiry`
 - `realized_vol_20d`
@@ -129,11 +137,43 @@ Exit criteria:
   - comparable sample count
 - Tests prove bucket filtering and fallback behavior.
 
-## Phase 4 - Forward Probability Model
+## Phase 4 - Data Layer For Research
 
 Goal:
 
-Train a probability model for `BarrierHitBeforeExpiry`.
+Persist market prices, trades, generated labels, feature datasets, and evaluation outputs.
+
+Deliverables:
+
+- SQLite schema.
+- Market data save/load functions.
+- Trade persistence.
+- Label persistence.
+- Feature dataset export.
+- Evaluation result persistence.
+
+Tables:
+
+- `trades`
+- `market_prices`
+- `feature_snapshots`
+- `barrier_labels`
+- `analysis_results`
+- `model_evaluations`
+
+Exit criteria:
+
+- Market price storage is idempotent by `date + pair`.
+- `pair` is fixed to AUD/USD in this phase.
+- Feature datasets can be regenerated and compared.
+- One analysis result can be saved and reloaded.
+- Engine and model remain independent from SQLite.
+
+## Phase 5 - Price-Only Probability Model
+
+Goal:
+
+Train the first probability model for `BarrierHitBeforeExpiry` using AUD/USD price-derived features only.
 
 Deliverables:
 
@@ -161,34 +201,28 @@ Exit criteria:
 - Feature leakage checks pass.
 - CLI output clearly labels model probability versus baseline probability.
 
-## Phase 5 - Data Layer
+## Phase 6 - External Market Features
 
 Goal:
 
-Persist market prices, trades, feature snapshots, and model outputs.
+Add external features that may help estimate future AUD/USD path risk.
 
-Deliverables:
+Candidate data:
 
-- SQLite schema.
-- Market data save/load functions.
-- Trade persistence.
-- Analysis result persistence.
-
-Tables:
-
-- `trades`
-- `market_prices`
-- `feature_snapshots`
-- `analysis_results`
+- DXY.
+- VIX.
+- AU-US yield spread.
+- Iron ore proxy.
+- AUD/USD implied volatility, if available.
+- RBA/Fed rate expectations, if available.
 
 Exit criteria:
 
-- Market price storage is idempotent by `date + pair`.
-- One trade can be saved.
-- One analysis result can be saved and reloaded.
-- Engine and model remain independent from SQLite.
+- Each feature has a documented source.
+- Each feature is lagged correctly to avoid look-ahead leakage.
+- Model evaluation shows whether the feature improves calibration.
 
-## Phase 6 - Minimal UI
+## Phase 7 - Minimal UI
 
 Goal:
 
@@ -226,27 +260,6 @@ Exit criteria:
 - User can refresh AUD/USD data and analyze one trade from the browser.
 - Result matches CLI output.
 - UI contains no duplicated calculation logic.
-
-## Phase 7 - External Market Features
-
-Goal:
-
-Add features that help estimate future AUD/USD path risk.
-
-Candidate data:
-
-- DXY.
-- VIX.
-- AU-US yield spread.
-- Iron ore proxy.
-- AUD/USD implied volatility, if available.
-- RBA/Fed rate expectations, if available.
-
-Exit criteria:
-
-- Each feature has a documented source.
-- Each feature is lagged correctly to avoid look-ahead leakage.
-- Model evaluation shows whether the feature improves calibration.
 
 ## Phase 8 - API Layer, If Needed
 

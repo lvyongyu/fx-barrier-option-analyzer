@@ -50,7 +50,7 @@ The answer should eventually combine:
 
 ### Real Product Examples
 
-The system should support Corpay-style `Ratio Convertible Forward` structures for both importers and exporters.
+The system should support Corpay-style `Ratio Convertible Forward` structures for AUD/USD.
 
 Example fields from real trade sheets:
 
@@ -58,8 +58,8 @@ Example fields from real trade sheets:
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Ratio Convertible Forward | Importer | AUD/USD | USD 500,000 | USD 1,000,000 | 0.6850 | 0.6935 | Continuous | 2026-12-30 |
 | Ratio Convertible Forward | Importer | AUD/USD | USD 1,000,000 | USD 2,000,000 | 0.6850 | 0.6935 | Continuous | 2026-12-30 |
-| Ratio Convertible Forward | Exporter | AUD/CNH | AUD 1,000,000 | AUD 2,000,000 | 4.8400 | 4.8000 | Continuous | 2027-09-20 |
-| Ratio Convertible Forward | Exporter | AUD/CNH | AUD 1,000,000 | AUD 2,000,000 | 4.8900 | 4.8700 | Continuous | 2027-12-29 |
+
+AUD/CNH examples are useful for understanding the broader product family, but they are out of scope for the current implementation.
 
 Options expire at 3:00 p.m. Tokyo time in these examples.
 
@@ -95,7 +95,7 @@ Excluded from MVP:
 - News analysis.
 - LLM-generated probability.
 - Trading execution.
-- Multi-currency portfolio support.
+- Multi-currency or non-AUD/USD support.
 - Full volatility-adjusted probability.
 - Full pricing model or option Greeks.
 

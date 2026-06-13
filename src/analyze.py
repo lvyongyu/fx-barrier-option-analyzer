@@ -6,13 +6,12 @@ from datetime import date
 import json
 
 from src.barrier_engine import Trade, calculate_touch_probability
-from src.data_loader import download_prices
+from src.data_loader import download_audusd_prices
 from src.reporting import format_summary
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Analyze FX barrier touch probability.")
-    parser.add_argument("--pair", default="AUD/USD")
     parser.add_argument("--period", default="2y", help="yfinance period, default: 2y")
     parser.add_argument("--trade-date", required=True, type=date.fromisoformat)
     parser.add_argument("--expiry-date", required=True, type=date.fromisoformat)
@@ -33,9 +32,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    prices = download_prices(pair=args.pair, period=args.period)
+    prices = download_audusd_prices(period=args.period)
     trade = Trade(
-        pair=args.pair,
+        pair="AUD/USD",
         trade_date=args.trade_date,
         spot=args.spot,
         strike=args.strike,
