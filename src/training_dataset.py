@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import date
 
 import pandas as pd
 
@@ -79,6 +80,7 @@ def build_price_plus_external_training_dataset(
     dxy: pd.DataFrame,
     vix: pd.DataFrame,
     min_lookback_days: int = 60,
+    external_feature_cache: dict[date, dict[str, object]] | None = None,
 ) -> pd.DataFrame:
     dataset = build_price_only_training_dataset(
         trade,
@@ -88,14 +90,21 @@ def build_price_plus_external_training_dataset(
     if dataset.empty:
         return dataset
 
+    if external_feature_cache is None:
+        external_feature_cache = {}
+
     rows: list[dict[str, object]] = []
     for row in dataset.to_dict("records"):
-        external_snapshot = build_external_feature_snapshot(
-            dxy,
-            vix,
-            as_of_date=row["as_of_date"],
-        )
-        external_row = asdict(external_snapshot)
+        as_of_date = row["as_of_date"]
+        if as_of_date not in external_feature_cache:
+            external_feature_cache[as_of_date] = asdict(
+                build_external_feature_snapshot(
+                    dxy,
+                    vix,
+                    as_of_date=as_of_date,
+                )
+            )
+        external_row = dict(external_feature_cache[as_of_date])
         row["external_as_of_date"] = external_row.pop("as_of_date")
         row.update(external_row)
         if _has_missing_external_features(row):

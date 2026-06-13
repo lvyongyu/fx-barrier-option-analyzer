@@ -284,6 +284,15 @@ The suite creates near/medium/far up-barrier and down-barrier examples using rec
 AUD/USD ATR to set barrier distances. This gives the model evaluation layer a broader
 set of scenarios than one long-tenor, near-barrier confirmation example.
 
+Evaluate the full sample suite:
+
+```bash
+python -m src.evaluation_report --sample-trades --periods 5y
+```
+
+The batch report shows which trade types, if any, have positive model `dBrier`.
+Positive `dBrier` means the model beat the historical baseline on walk-forward Brier score.
+
 ## Calculation Summary
 
 For the target trade:

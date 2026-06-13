@@ -1,4 +1,4 @@
-from src.evaluation_report import PeriodEvaluation, format_evaluation_report
+from src.evaluation_report import PeriodEvaluation, SampleTradeEvaluation, format_evaluation_report, format_sample_trade_evaluation_report
 from src.price_model import CalibrationBucket, PriceModelEvaluation
 
 
@@ -26,6 +26,39 @@ def test_format_evaluation_report_includes_summary_and_calibration() -> None:
     assert "Price-only:" in report
     assert "Price + external:" in report
     assert "0-20%: n=1, avg_pred=10.00%, actual_hit=0.00%" in report
+
+
+def test_format_sample_trade_evaluation_report_includes_each_trade_summary() -> None:
+    evaluation = SampleTradeEvaluation(
+        sample_name="near_up_30d",
+        sample_description="30-day near up barrier",
+        barrier_direction="up",
+        tenor_days=30,
+        barrier_distance_pct=1.5,
+        period_evaluation=PeriodEvaluation(
+            period="5y",
+            market_rows=1300,
+            baseline_probability=63.1,
+            baseline_sample_count=1279,
+            baseline_touch_count=807,
+            volatility_adjusted_probability=61.2,
+            volatility_comparable_sample_count=250,
+            price_only_model=model_evaluation(58.0, 0.19),
+            price_plus_external_model=model_evaluation(62.0, 0.18),
+        ),
+    )
+
+    report = format_sample_trade_evaluation_report([evaluation])
+
+    assert "Sample trade model evaluation report" in report
+    assert "Trade" in report
+    assert "Dir" in report
+    assert "near_up_30d" in report
+    assert "30d" in report
+    assert "1.50%" in report
+    assert "63.10%" in report
+    assert "Price dBrier" in report
+    assert "Ext dBrier" in report
 
 
 def model_evaluation(probability: float, brier_score: float) -> PriceModelEvaluation:

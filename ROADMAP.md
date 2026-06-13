@@ -206,7 +206,8 @@ Exit criteria:
 - CLI output clearly labels model probability versus baseline probability.
 - Status: experimental logistic regression complete with walk-forward Brier/log-loss and calibration buckets.
 - Status: model evaluation report can compare 2y/5y/10y windows before trusting model output.
-- Next: use longer-history reports to decide whether the price-only model is useful or should be redesigned.
+- Status: batch evaluation can compare generated near/medium/far up/down sample trades.
+- Next: use batch reports to decide whether the price-only model is useful or should be redesigned.
 
 ## Phase 6 - External Market Features
 
@@ -230,6 +231,7 @@ Exit criteria:
 - Model evaluation shows whether the feature improves calibration.
 - Status: DXY/VIX snapshots are available and can be included in a price + external model comparison.
 - Status: evaluation report compares price-only versus price + external models across multiple historical windows.
+- Status: batch evaluation compares price-only versus price + external models across generated sample trades.
 - Next: evaluate whether DXY/VIX improves calibration on longer history before adding more external features.
 
 ## Phase 7 - Minimal UI
