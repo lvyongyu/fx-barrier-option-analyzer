@@ -20,7 +20,8 @@ Deliverables:
 
 Exit criteria:
 
-- The historical touch probability method is accepted.
+- The target is accepted: estimate `P(Barrier Hit Before Expiry)`.
+- Historical touch probability is accepted as the first baseline, not the final forecasting method.
 - MVP scope is agreed.
 - Non-MVP features are explicitly deferred.
 
@@ -28,7 +29,7 @@ Exit criteria:
 
 Goal:
 
-Build the smallest reliable core engine.
+Build the smallest reliable baseline engine.
 
 Deliverables:
 
@@ -45,6 +46,7 @@ Core functions:
 - Calculate `distance_pct`.
 - Check actual barrier hit within a trade window.
 - Calculate historical touch probability with rolling windows.
+- Represent Corpay-style Ratio Convertible Forward trade fields.
 
 Tests:
 
@@ -61,36 +63,132 @@ Exit criteria:
 - Output can reproduce a known hand-worked example.
 - No UI, API, or database logic is mixed into the engine.
 
-## Phase 2 - Data Layer
+## Phase 2 - Feature Engine
 
 Goal:
 
-Persist market prices, trades, and backtest results.
+Start moving from historical frequency toward future touch estimation by measuring current market state.
+
+Deliverables:
+
+- `feature_engine.py`
+- Feature snapshot for the current trade.
+- Historical feature snapshots for synthetic trade dates.
+- Tests proving no look-ahead leakage.
+
+Core features:
+
+- `product_type`
+- `client_direction`
+- `protected_amount`
+- `ratio_amount`
+- `barrier_level_period`
+- `distance_pct`
+- `days_to_expiry`
+- `realized_vol_20d`
+- `realized_vol_60d`
+- `atr_14d`
+- `trend_20d`
+- `trend_60d`
+- `range_position_60d`
+- `recent_high_distance`
+- `recent_low_distance`
+
+Exit criteria:
+
+- Features for a historical synthetic trade date use only data available on or before that date.
+- Current trade feature snapshot is printed alongside the historical baseline.
+- Tests cover volatility, trend, and leakage boundaries.
+
+## Phase 3 - Volatility-Adjusted Estimate
+
+Goal:
+
+Create the first forward-looking adjustment above the historical baseline.
+
+Deliverables:
+
+- Volatility regime classification.
+- Baseline probability by comparable volatility buckets.
+- Volatility-adjusted probability.
+- CLI output showing both baseline and adjusted probability.
+
+Possible method:
+
+- Calculate current realized volatility.
+- Rank it against historical realized volatility distribution.
+- Compare current trade only with historical windows in similar volatility buckets.
+- Fall back to full historical baseline if sample count is too low.
+
+Exit criteria:
+
+- Output includes:
+  - historical baseline probability
+  - current volatility percentile
+  - volatility-adjusted probability
+  - comparable sample count
+- Tests prove bucket filtering and fallback behavior.
+
+## Phase 4 - Forward Probability Model
+
+Goal:
+
+Train a probability model for `BarrierHitBeforeExpiry`.
+
+Deliverables:
+
+- Historical training dataset.
+- Walk-forward validation.
+- Calibrated model probability.
+- Model evaluation report.
+
+Candidate models:
+
+- Logistic regression as first model.
+- Gradient boosting only after baseline and leakage tests are solid.
+
+Required metrics:
+
+- Brier score.
+- Log loss.
+- Calibration curve.
+- Probability bucket hit rates.
+- Comparison against historical baseline.
+
+Exit criteria:
+
+- Model beats or usefully complements baseline out of sample.
+- Feature leakage checks pass.
+- CLI output clearly labels model probability versus baseline probability.
+
+## Phase 5 - Data Layer
+
+Goal:
+
+Persist market prices, trades, feature snapshots, and model outputs.
 
 Deliverables:
 
 - SQLite schema.
 - Market data save/load functions.
-- Repository functions for:
-  - inserting market prices
-  - loading market prices
-  - saving trades
-  - saving backtest results
+- Trade persistence.
+- Analysis result persistence.
 
 Tables:
 
 - `trades`
 - `market_prices`
-- `backtest_results`
+- `feature_snapshots`
+- `analysis_results`
 
 Exit criteria:
 
 - Market price storage is idempotent by `date + pair`.
 - One trade can be saved.
 - One analysis result can be saved and reloaded.
-- Engine still remains independent from SQLite.
+- Engine and model remain independent from SQLite.
 
-## Phase 3 - Minimal UI
+## Phase 6 - Minimal UI
 
 Goal:
 
@@ -110,6 +208,7 @@ Deliverables:
   - close price
   - strike line
   - barrier line
+- Feature and probability breakdown.
 
 Displayed metrics:
 
@@ -117,41 +216,39 @@ Displayed metrics:
 - Barrier.
 - Barrier distance percentage.
 - Days to expiry.
-- Historical samples.
-- Touch count.
-- Historical touch probability.
+- Historical baseline probability.
+- Volatility-adjusted probability.
+- Model probability, once available.
+- Confidence and data-quality notes.
 
 Exit criteria:
 
 - User can refresh AUD/USD data and analyze one trade from the browser.
-- Result matches the engine output.
+- Result matches CLI output.
 - UI contains no duplicated calculation logic.
 
-## Phase 4 - CSV Import, Optional
+## Phase 7 - External Market Features
 
 Goal:
 
-Add manual data import only if needed.
+Add features that help estimate future AUD/USD path risk.
 
-Deliverables:
+Candidate data:
 
-- CSV import function.
-- CSV validation.
-- Data quality checks.
-
-Validation:
-
-- Confirm columns are present.
-- Confirm date range.
-- Detect duplicate dates.
-- Detect missing or zero prices.
+- DXY.
+- VIX.
+- AU-US yield spread.
+- Iron ore proxy.
+- AUD/USD implied volatility, if available.
+- RBA/Fed rate expectations, if available.
 
 Exit criteria:
 
-- CSV can be imported when Yahoo Finance is unavailable or custom data is needed.
-- Imported data remains compatible with existing engine tests.
+- Each feature has a documented source.
+- Each feature is lagged correctly to avoid look-ahead leakage.
+- Model evaluation shows whether the feature improves calibration.
 
-## Phase 5 - API Layer, If Needed
+## Phase 8 - API Layer, If Needed
 
 Goal:
 
@@ -164,7 +261,6 @@ Recommended stack:
 Possible endpoints:
 
 - `GET /health`
-- `POST /market-prices/upload`
 - `POST /market-prices/refresh`
 - `POST /analyze`
 - `GET /trades/{trade_id}`
@@ -172,7 +268,7 @@ Possible endpoints:
 
 Exit criteria:
 
-- API output matches engine output.
+- API output matches CLI output.
 - API has request validation.
 - API is documented with OpenAPI.
 
@@ -180,64 +276,7 @@ Decision gate:
 
 Only build this phase if there is a real integration need. If Streamlit is enough, skip this phase.
 
-## Phase 6 - Volatility Adjustment
-
-Goal:
-
-Compare raw historical probability with volatility-aware probability.
-
-Potential metrics:
-
-- Realized volatility.
-- ATR.
-- Rolling high-low range.
-- Volatility percentile.
-
-Possible outputs:
-
-- Historical probability.
-- Current volatility regime.
-- Volatility-adjusted probability.
-
-Exit criteria:
-
-- Raw probability remains visible.
-- Volatility adjustment is separately labeled.
-- Adjustment method is documented and testable.
-
-## Phase 7 - Multi-Factor Model
-
-Goal:
-
-Experiment with predictive features after the historical baseline is trusted.
-
-Possible features:
-
-- DXY.
-- AUD-US yield spread.
-- Iron ore.
-- VIX.
-- China PMI.
-- Realized volatility.
-- Trend and range features.
-
-Possible model:
-
-- XGBoost or logistic regression.
-
-Target:
-
-```text
-BarrierHit
-```
-
-Exit criteria:
-
-- Baseline historical probability remains the benchmark.
-- Model is evaluated out of sample.
-- Feature leakage is explicitly checked.
-
-## Phase 8 - Explanation Layer
+## Phase 9 - Explanation Layer
 
 Goal:
 
@@ -263,12 +302,12 @@ Exit criteria:
 
 ## Recommended Immediate Next Step
 
-Do Phase 1 only:
+Build Phase 2:
 
 ```text
-barrier_engine.py
-test_barrier_engine.py
-sample_audusd.csv
+feature_engine.py
+tests/test_feature_engine.py
+CLI feature snapshot output
 ```
 
-Do not build Streamlit, FastAPI, or SQLite until the core calculation is accepted.
+Do not build Streamlit, FastAPI, or SQLite until the forward-estimate features are useful enough to show.

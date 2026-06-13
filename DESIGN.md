@@ -4,17 +4,23 @@
 
 Build a lightweight analysis system for FX barrier option trades, starting with AUD/USD.
 
-The system estimates:
+The system's end goal is to estimate:
 
 ```text
 P(Barrier Hit Before Expiry)
 ```
 
-This is not a traditional FX forecasting system. It does not predict the final AUD/USD level, the direction of AUD/USD, or a future spot price. It estimates whether a specified barrier would be touched before expiry, based on historical daily OHLC behavior.
+This is not a traditional FX point-forecasting system. It does not predict the final AUD/USD level or only the direction of AUD/USD. It estimates a path-dependent event:
+
+```text
+Will AUD/USD touch the barrier before expiry?
+```
+
+The first implementation uses historical touch frequency as a baseline prior. Later versions must improve that baseline with current volatility, market regime, and forward-looking features.
 
 ## 2. Core Use Case
 
-Given a trade:
+Given a Corpay-style ratio convertible forward trade:
 
 ```json
 {
@@ -31,7 +37,46 @@ Given a trade:
 Answer:
 
 ```text
-Historically, how often did AUD/USD touch an equivalent barrier before an equivalent expiry window?
+What is the estimated probability that AUD/USD touches this barrier before expiry?
+```
+
+The answer should eventually combine:
+
+- Historical baseline probability.
+- Current volatility regime.
+- Current trend and distance-to-barrier context.
+- Macro and risk-regime features.
+- Model calibration and confidence.
+
+### Real Product Example
+
+The system should support Corpay-style `Ratio Convertible Forward - Importer` structures.
+
+Example fields from a real trade sheet:
+
+| Field | Example |
+| --- | --- |
+| Product type | Ratio Convertible Forward |
+| Client direction | Importer |
+| Pair | AUD/USD |
+| Protected amount | USD 500,000 |
+| Ratio amount | USD 1,000,000 |
+| Strike rate | 0.6850 |
+| Barrier level | 0.6935 |
+| Barrier level period | Continuous |
+| Expiry date | 2026-12-30 |
+| Expiry time | 3:00 p.m. Tokyo time |
+
+For this product, the modeling target is:
+
+```text
+Will AUD/USD breach 0.6935 at any point during the continuous barrier period before expiry?
+```
+
+The downstream payoff scenario depends on whether the barrier breaches, but the first modeling problem remains the path event:
+
+```text
+BarrierBreachBeforeExpiry = true / false
 ```
 
 ## 3. MVP Scope
@@ -55,7 +100,7 @@ Excluded from MVP:
 - LLM-generated probability.
 - Trading execution.
 - Multi-currency portfolio support.
-- Volatility-adjusted probability.
+- Full volatility-adjusted probability.
 - Full pricing model or option Greeks.
 
 ## 4. Key Definitions
@@ -112,6 +157,22 @@ The MVP uses daily OHLC data, so it can only know whether the barrier was touche
 
 ## 5. Historical Touch Probability Method
 
+This method is the baseline, not the final product.
+
+It answers:
+
+```text
+How often did similar historical setups touch the barrier?
+```
+
+It does not fully answer:
+
+```text
+Will the current trade touch the barrier?
+```
+
+To estimate the current trade's future touch probability, later versions must condition the baseline on current market state.
+
 For a target trade:
 
 ```text
@@ -142,7 +203,44 @@ Final output:
 touch_probability = touch_count / sample_count
 ```
 
-## 6. Data Requirements
+## 6. Forward Estimate Direction
+
+The production target should become:
+
+```text
+estimated_touch_probability = f(
+  historical_baseline,
+  days_to_expiry,
+  distance_to_barrier,
+  realized_volatility,
+  volatility_regime,
+  trend_features,
+  macro_features,
+  risk_sentiment_features
+)
+```
+
+The model should estimate a binary event:
+
+```text
+target = BarrierHitBeforeExpiry
+```
+
+The historical baseline remains useful because it provides a simple benchmark. Every more advanced estimate should be compared against it.
+
+Recommended staged outputs:
+
+```text
+Historical baseline probability
+Volatility-adjusted probability
+Regime-adjusted probability
+Model probability
+Confidence / data-quality notes
+```
+
+The system should avoid pretending that historical frequency alone is a complete future forecast.
+
+## 7. Data Requirements
 
 ### MarketPrice
 
@@ -180,21 +278,26 @@ date,open,high,low,close
 
 Column names should be treated case-insensitively.
 
-## 7. Domain Entities
+## 8. Domain Entities
 
 ### Trade
 
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | integer | Internal ID |
+| product_type | string | Example: Ratio Convertible Forward |
+| client_direction | string | Example: Importer |
 | pair | string | MVP: AUD/USD |
 | trade_date | date | Trade start date |
 | spot | decimal | Spot at trade date |
 | strike | decimal | Option strike |
 | barrier | decimal | Barrier level |
 | barrier_direction | string | `up` or `down` |
+| barrier_level_period | string | Example: continuous |
 | expiry_date | date | Expiry date |
-| notional | decimal | Optional in first version |
+| expiry_time_zone | string | Example: Tokyo |
+| protected_amount | decimal | Base protected notional |
+| ratio_amount | decimal | Leveraged notional if applicable |
 | option_type | string | Optional: call/put |
 
 ### BacktestResult
@@ -214,7 +317,27 @@ Column names should be treated case-insensitively.
 | min_low | decimal | Min low in trade window |
 | days_to_hit | integer | Days from trade date to first touch |
 
-## 8. Suggested Architecture
+### FeatureSnapshot
+
+Later versions should create one feature row per synthetic historical trade date and one feature row for the current trade.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| as_of_date | date | Feature calculation date |
+| pair | string | Example: AUD/USD |
+| days_to_expiry | integer | Calendar days |
+| distance_pct | decimal | Barrier distance percentage |
+| realized_vol_20d | decimal | Recent realized volatility |
+| realized_vol_60d | decimal | Medium-term realized volatility |
+| atr_14d | decimal | Average true range proxy |
+| trend_20d | decimal | Recent return/trend |
+| range_position | decimal | Spot position in recent range |
+| dxy_return_20d | decimal | Optional external feature |
+| vix_level | decimal | Optional external feature |
+| au_us_yield_spread | decimal | Optional external feature |
+| target_barrier_hit | boolean | Known only for historical rows |
+
+## 9. Suggested Architecture
 
 Start simple.
 
@@ -223,6 +346,12 @@ yfinance AUDUSD=X data
    |
    v
 barrier_engine.py
+   |
+   v
+feature_engine.py
+   |
+   v
+probability_model.py
    |
    v
 CLI or Streamlit UI
@@ -237,6 +366,8 @@ Recommended module split once implementation begins:
 src/
   barrier_engine.py      # pure calculation logic
   data_loader.py         # yfinance download and data validation
+  feature_engine.py      # volatility, trend, and regime features
+  probability_model.py   # calibrated forward touch estimate
   repository.py          # SQLite reads/writes
   app_streamlit.py       # UI, added after engine is tested
 tests/
@@ -247,12 +378,15 @@ Important design rule:
 
 The barrier calculation should be pure and testable. It should not depend on Streamlit, FastAPI, SQLite, or yfinance.
 
-## 9. Technology Choices
+Feature generation and probability modeling should also be testable separately from the UI.
+
+## 10. Technology Choices
 
 ### Recommended MVP Stack
 
 - Python
 - Pandas
+- Scikit-learn, once model features are introduced
 - SQLite
 - Pytest
 - Streamlit, only after core logic is validated
@@ -263,7 +397,7 @@ FastAPI is useful if another system needs to call this analyzer. It should not b
 
 Adding FastAPI too early creates two product surfaces: API and UI. That increases work before the core calculation has been validated.
 
-## 10. Validation Rules
+## 11. Validation Rules
 
 Reject or warn on:
 
@@ -277,7 +411,7 @@ Reject or warn on:
 
 For MVP, if historical data does not extend far enough for a complete forward window, that sample should be excluded from `sample_count`.
 
-## 11. Expected Output
+## 12. Expected Output
 
 Example:
 
@@ -290,23 +424,50 @@ Example:
   "distance_pct": 8.46,
   "historical_samples": 3124,
   "touch_count": 1410,
-  "touch_probability": 45.1
+  "historical_baseline_probability": 45.1,
+  "volatility_adjusted_probability": null,
+  "model_probability": null,
+  "probability_used": 45.1,
+  "method": "historical_baseline"
 }
 ```
 
-## 12. Known Limitations
+## 13. Model Evaluation
+
+Future models should be evaluated as probability models, not only classifiers.
+
+Required evaluation metrics:
+
+- Out-of-sample log loss.
+- Brier score.
+- Calibration curve.
+- Hit-rate by probability bucket.
+- Comparison against historical baseline.
+
+Validation approach:
+
+- Use walk-forward validation.
+- Avoid look-ahead leakage.
+- Generate historical features using only information available as of each synthetic trade date.
+- Compare every model against the baseline historical probability.
+
+## 14. Known Limitations
 
 - Daily OHLC cannot identify intraday ordering.
 - Calendar-day windows may include weekends and holidays.
 - Historical probability assumes future behavior resembles historical behavior.
+- Volatility and macro features may still fail during regime breaks.
+- Daily OHLC data may miss intraday sequencing around barriers.
 - No volatility regime adjustment in MVP.
 - No macro, news, or implied-volatility inputs in MVP.
 - No option pricing or payoff modeling in MVP.
 
-## 13. Design Principles
+## 15. Design Principles
 
 - Prioritize calculation correctness over UI.
 - Keep the first version auditable.
-- Avoid machine learning until the historical baseline is trusted.
-- Every probability should be explainable from historical samples.
+- Treat historical baseline as the benchmark, not the endpoint.
+- Move toward forward-looking probability estimation through measurable feature improvements.
+- Avoid machine learning until the target-label generation and baseline are trusted.
+- Every probability should identify its method: baseline, volatility-adjusted, or model-based.
 - Do not mix explanatory LLM output with probability generation.
