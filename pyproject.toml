@@ -1,0 +1,19 @@
+[project]
+name = "fx-barrier-option-analyzer"
+version = "0.1.0"
+description = "Historical touch-probability analyzer for AUD/USD barrier option trades."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2",
+    "yfinance>=0.2.51",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
