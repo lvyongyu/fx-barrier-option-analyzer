@@ -178,14 +178,18 @@ def _append_barrier_theory_section(lines: list[str], evaluation: BarrierTheoryEv
             "Barrier-theory estimate:",
             f"Method: {snapshot.method}",
             f"GBM probability: {_format_optional_pct(snapshot.probability)}",
+            f"Blended probability: {_format_optional_pct(evaluation.blended_probability)}",
+            f"Blend GBM weight: {_format_optional_number(evaluation.blend_weight)}",
             f"Expected move to expiry: {_format_optional_pct(snapshot.expected_move_pct)}",
             f"Distance in vol units: {_format_optional_number(snapshot.distance_in_vol_units)}",
             f"Barrier z-score: {_format_optional_number(snapshot.barrier_z_score)}",
             f"Train rows: {evaluation.train_rows}",
             f"Test rows: {evaluation.test_rows}",
             f"GBM Brier score: {_format_optional_number(evaluation.gbm_brier_score)}",
+            f"Blended Brier score: {_format_optional_number(evaluation.blended_brier_score)}",
             f"Baseline Brier score: {_format_optional_number(evaluation.baseline_brier_score)}",
             f"GBM comparison: {_barrier_theory_comparison_note(evaluation)}",
+            f"Blend comparison: {_barrier_theory_blend_comparison_note(evaluation)}",
         ]
     )
     if evaluation.used_fallback and evaluation.fallback_reason:
@@ -210,3 +214,13 @@ def _barrier_theory_comparison_note(evaluation: BarrierTheoryEvaluation) -> str:
     if evaluation.gbm_brier_score > evaluation.baseline_brier_score:
         return "GBM underperformed baseline on Brier score"
     return "GBM tied baseline on Brier score"
+
+
+def _barrier_theory_blend_comparison_note(evaluation: BarrierTheoryEvaluation) -> str:
+    if evaluation.blended_brier_score is None or evaluation.baseline_brier_score is None:
+        return "n/a"
+    if evaluation.blended_brier_score < evaluation.baseline_brier_score:
+        return "blend beat baseline on Brier score"
+    if evaluation.blended_brier_score > evaluation.baseline_brier_score:
+        return "blend underperformed baseline on Brier score"
+    return "blend tied baseline on Brier score"

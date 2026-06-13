@@ -187,24 +187,31 @@ def test_format_summary_includes_barrier_theory_estimate() -> None:
             method="driftless_log_brownian_reflection",
             fallback_reason=None,
         ),
+        blended_probability=68.0,
+        blend_weight=0.45,
         train_rows=100,
         test_rows=50,
         positive_rate_train=60.0,
         positive_rate_test=62.0,
         baseline_probability=60.0,
         gbm_brier_score=0.18,
+        blended_brier_score=0.17,
         baseline_brier_score=0.22,
         used_fallback=False,
         fallback_reason=None,
         calibration_buckets=[],
+        blended_calibration_buckets=[],
     )
 
     summary = format_summary(result, barrier_theory=theory)
 
     assert "Barrier-theory estimate:" in summary
     assert "GBM probability: 72.00%" in summary
+    assert "Blended probability: 68.00%" in summary
+    assert "Blend GBM weight: 0.4500" in summary
     assert "Expected move to expiry: 5.00%" in summary
     assert "GBM comparison: GBM beat baseline on Brier score" in summary
+    assert "Blend comparison: blend beat baseline on Brier score" in summary
 
 
 def result_with_path(actual_path: BarrierPathResult) -> TouchProbabilityResult:

@@ -286,11 +286,12 @@ P(max_path >= up_barrier before expiry)
 This barrier-theory probability should be evaluated against:
 
 - Historical baseline probability.
+- Train-calibrated GBM/historical blend probability.
 - Volatility-adjusted probability.
 - Price-only logistic model.
 - Price + external-feature model.
 
-If the barrier-theory estimate is useful, later ML should calibrate or blend it rather than relearn barrier math from scratch. Initial sample-trade evaluation shows GBM helps some down-barrier cases but does not universally beat the historical baseline.
+If the barrier-theory estimate is useful, later ML should calibrate or blend it rather than relearn barrier math from scratch. The current blend chooses the GBM weight on the training split, then evaluates on the walk-forward test split. Initial sample-trade evaluation shows GBM helps some down-barrier cases but does not universally beat the historical baseline; the blend is more conservative and can dilute useful GBM signal.
 
 ## 7. Data Requirements
 

@@ -26,16 +26,20 @@ class BarrierTheorySnapshot:
 @dataclass(frozen=True)
 class BarrierTheoryEvaluation:
     current_snapshot: BarrierTheorySnapshot
+    blended_probability: float | None
+    blend_weight: float | None
     train_rows: int
     test_rows: int
     positive_rate_train: float | None
     positive_rate_test: float | None
     baseline_probability: float | None
     gbm_brier_score: float | None
+    blended_brier_score: float | None
     baseline_brier_score: float | None
     used_fallback: bool
     fallback_reason: str | None
     calibration_buckets: list[CalibrationBucket]
+    blended_calibration_buckets: list[CalibrationBucket]
 
 
 def calculate_gbm_touch_probability(
@@ -119,30 +123,51 @@ def evaluate_barrier_theory_model(
     train = prepared.iloc[:split_index]
     test = prepared.iloc[split_index:].copy()
     baseline_probability = float(train[TARGET_COLUMN].mean())
+    train = train.copy()
+    train["gbm_probability"] = train.apply(
+        lambda row: _row_gbm_probability(row, volatility_column),
+        axis=1,
+    )
+    train = train.dropna(subset=["gbm_probability"])
     test["gbm_probability"] = test.apply(
         lambda row: _row_gbm_probability(row, volatility_column),
         axis=1,
     )
     test = test.dropna(subset=["gbm_probability"])
-    if test.empty:
+    if train.empty or test.empty:
         return _evaluation_fallback(current_snapshot, "test dataset has no usable GBM probabilities")
 
     y_test = test[TARGET_COLUMN].astype(int)
     gbm_probabilities = test["gbm_probability"] / 100
     baseline_probabilities = [baseline_probability] * len(test)
+    blend_weight = _fit_blend_weight(
+        train[TARGET_COLUMN].astype(int),
+        train["gbm_probability"] / 100,
+        baseline_probability,
+    )
+    blended_probabilities = _blend_probabilities(gbm_probabilities, baseline_probability, blend_weight)
+    blended_probability = (
+        _blend_probability(current_snapshot.probability / 100, baseline_probability, blend_weight) * 100
+        if current_snapshot.probability is not None
+        else None
+    )
 
     return BarrierTheoryEvaluation(
         current_snapshot=current_snapshot,
+        blended_probability=blended_probability,
+        blend_weight=blend_weight,
         train_rows=int(len(train)),
         test_rows=int(len(test)),
         positive_rate_train=float(train[TARGET_COLUMN].mean() * 100),
         positive_rate_test=float(test[TARGET_COLUMN].mean() * 100),
         baseline_probability=baseline_probability * 100,
         gbm_brier_score=float(brier_score_loss(y_test, gbm_probabilities)),
+        blended_brier_score=float(brier_score_loss(y_test, blended_probabilities)),
         baseline_brier_score=float(brier_score_loss(y_test, baseline_probabilities)),
         used_fallback=current_snapshot.probability is None,
         fallback_reason=current_snapshot.fallback_reason,
         calibration_buckets=calculate_calibration_buckets(gbm_probabilities, y_test),
+        blended_calibration_buckets=calculate_calibration_buckets(blended_probabilities, y_test),
     )
 
 
@@ -189,6 +214,35 @@ def _row_gbm_probability(row: pd.Series, volatility_column: str) -> float | None
     return snapshot.probability
 
 
+def _fit_blend_weight(
+    actual_targets: pd.Series,
+    gbm_probabilities: pd.Series,
+    baseline_probability: float,
+) -> float:
+    best_weight = 0.0
+    best_score: float | None = None
+    for step in range(0, 21):
+        weight = step / 20
+        blended = _blend_probabilities(gbm_probabilities, baseline_probability, weight)
+        score = float(brier_score_loss(actual_targets, blended))
+        if best_score is None or score < best_score:
+            best_score = score
+            best_weight = weight
+    return best_weight
+
+
+def _blend_probabilities(
+    gbm_probabilities: pd.Series,
+    baseline_probability: float,
+    blend_weight: float,
+) -> pd.Series:
+    return gbm_probabilities.apply(lambda probability: _blend_probability(probability, baseline_probability, blend_weight))
+
+
+def _blend_probability(gbm_probability: float, baseline_probability: float, blend_weight: float) -> float:
+    return blend_weight * gbm_probability + (1 - blend_weight) * baseline_probability
+
+
 def _optional_float(value: object) -> float | None:
     if value is None or pd.isna(value):
         return None
@@ -209,14 +263,18 @@ def _fallback(reason: str) -> BarrierTheorySnapshot:
 def _evaluation_fallback(snapshot: BarrierTheorySnapshot, reason: str) -> BarrierTheoryEvaluation:
     return BarrierTheoryEvaluation(
         current_snapshot=snapshot,
+        blended_probability=None,
+        blend_weight=None,
         train_rows=0,
         test_rows=0,
         positive_rate_train=None,
         positive_rate_test=None,
         baseline_probability=None,
         gbm_brier_score=None,
+        blended_brier_score=None,
         baseline_brier_score=None,
         used_fallback=True,
         fallback_reason=reason,
         calibration_buckets=[],
+        blended_calibration_buckets=[],
     )

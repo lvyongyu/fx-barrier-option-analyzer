@@ -125,10 +125,15 @@ def test_evaluate_barrier_theory_model_returns_probability_and_metrics() -> None
     assert evaluation.current_snapshot.probability is not None
     assert 0 <= evaluation.current_snapshot.probability <= 100
     assert evaluation.gbm_brier_score is not None
+    assert evaluation.blended_brier_score is not None
     assert evaluation.baseline_brier_score is not None
+    assert evaluation.blended_probability is not None
+    assert evaluation.blend_weight is not None
+    assert 0 <= evaluation.blend_weight <= 1
     assert evaluation.train_rows > 0
     assert evaluation.test_rows > 0
     assert sum(bucket.sample_count for bucket in evaluation.calibration_buckets) == evaluation.test_rows
+    assert sum(bucket.sample_count for bucket in evaluation.blended_calibration_buckets) == evaluation.test_rows
 
 
 def make_prices(days: int = 260) -> pd.DataFrame:

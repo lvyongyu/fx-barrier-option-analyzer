@@ -28,10 +28,12 @@ def test_format_evaluation_report_includes_summary_and_calibration() -> None:
     assert "Period | Rows" in report
     assert "Price dBrier" in report
     assert "GBM dBrier" in report
+    assert "Blend dBrier" in report
     assert "Ext dBrier" in report
     assert "2y" in report
     assert "87.76%" in report
     assert "GBM:" in report
+    assert "GBM blend:" in report
     assert "Price-only:" in report
     assert "Price + external:" in report
     assert "0-20%: n=1, avg_pred=10.00%, actual_hit=0.00%" in report
@@ -69,6 +71,9 @@ def test_format_sample_trade_evaluation_report_includes_each_trade_summary() -> 
     assert "63.10%" in report
     assert "GBM prob" in report
     assert "GBM dBrier" in report
+    assert "Blend prob" in report
+    assert "Blend dBrier" in report
+    assert "Blend w" in report
     assert "Price dBrier" in report
     assert "Ext dBrier" in report
 
@@ -107,12 +112,15 @@ def theory_evaluation(probability: float, brier_score: float) -> BarrierTheoryEv
             method="driftless_log_brownian_reflection",
             fallback_reason=None,
         ),
+        blended_probability=probability + 1,
+        blend_weight=0.5,
         train_rows=100,
         test_rows=5,
         positive_rate_train=75.0,
         positive_rate_test=80.0,
         baseline_probability=75.0,
         gbm_brier_score=brier_score,
+        blended_brier_score=brier_score - 0.01,
         baseline_brier_score=0.2,
         used_fallback=False,
         fallback_reason=None,
@@ -122,5 +130,12 @@ def theory_evaluation(probability: float, brier_score: float) -> BarrierTheoryEv
             CalibrationBucket(40, 60, 1, 50.0, 100.0),
             CalibrationBucket(60, 80, 1, 70.0, 100.0),
             CalibrationBucket(80, 100, 1, 90.0, 100.0),
+        ],
+        blended_calibration_buckets=[
+            CalibrationBucket(0, 20, 1, 12.0, 0.0),
+            CalibrationBucket(20, 40, 1, 32.0, 100.0),
+            CalibrationBucket(40, 60, 1, 52.0, 100.0),
+            CalibrationBucket(60, 80, 1, 72.0, 100.0),
+            CalibrationBucket(80, 100, 1, 92.0, 100.0),
         ],
     )

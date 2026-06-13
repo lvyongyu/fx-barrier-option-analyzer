@@ -266,6 +266,7 @@ The report compares:
 - historical baseline probability
 - volatility-adjusted probability
 - GBM barrier-theory probability and Brier score
+- train-calibrated GBM/historical blend probability and Brier score
 - price-only model probability and Brier score
 - price + external model probability and Brier score
 - calibration buckets showing predicted probability versus actual hit rate
@@ -297,11 +298,11 @@ Positive `dBrier` means the model beat the historical baseline on walk-forward B
 Example 5y batch finding after adding the GBM barrier-theory baseline:
 
 ```text
-medium_down_90d  GBM dBrier  0.0662   Price dBrier -0.1982
-far_down_180d    GBM dBrier  0.0171   Price dBrier -0.1227
+medium_down_90d  GBM dBrier  0.0662   Blend dBrier  0.0275   Price dBrier -0.1982
+far_down_180d    GBM dBrier  0.0171   Blend dBrier  0.0121   Price dBrier -0.1227
 ```
 
-This means the transparent GBM estimate is already more useful than the generic logistic model in some down-barrier scenarios, though it is not yet a universal improvement.
+This means the transparent GBM estimate is already more useful than the generic logistic model in some down-barrier scenarios. The blend is more conservative than pure GBM: it can smooth losses, but it can also dilute useful GBM signal.
 
 ## External Forecast Comparison
 
@@ -329,10 +330,11 @@ Conclusion: the external forecast is directionally reasonable, but the report is
 
 ```text
 GBM touch probability
+train-calibrated GBM/historical blend
 distance in volatility units
 expected move to expiry
 barrier z-score
-GBM dBrier in batch evaluation
+GBM and blend dBrier in batch evaluation
 ```
 
 The goal is not to copy the external forecast. The goal is to build a transparent version that can be tested against historical outcomes.

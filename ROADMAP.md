@@ -244,7 +244,8 @@ Deliverables:
   - GBM probability
   - GBM Brier score
   - GBM dBrier versus historical baseline
-  - calibrated blend probability, if useful
+  - train-calibrated GBM/historical blend probability
+  - blend Brier score and dBrier versus historical baseline
 
 Exit criteria:
 
@@ -258,9 +259,10 @@ Status:
 
 - Initial implementation complete.
 - `src/barrier_theory.py` implements driftless log-Brownian reflection probability.
-- Single-trade and batch evaluation reports include GBM probability and GBM dBrier.
+- Single-trade and batch evaluation reports include GBM probability, blended probability, GBM dBrier, and blend dBrier.
 - Tests cover GBM math, volatility sensitivity, expiry sensitivity, symmetry, fallbacks, and walk-forward evaluation.
 - Initial 5y sample batch finding: GBM improves over baseline for some down-barrier scenarios, especially medium/far down barriers, but does not universally beat baseline.
+- Initial blend finding: train-calibrated blend is more conservative than pure GBM; it can smooth losses, but may dilute useful GBM signal.
 - UI remains deferred until probability methods are more credible.
 
 ## Phase 6 - External Market Features
