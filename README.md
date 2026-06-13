@@ -272,6 +272,18 @@ The report compares:
 Calibration buckets answer the practical question: when the model predicts a 40-60%
 touch probability, did similar historical samples actually hit about 40-60% of the time?
 
+## Sample Trade Suite
+
+Generate several AUD/USD trade examples from the latest historical close:
+
+```bash
+python -m src.sample_trades --period 5y
+```
+
+The suite creates near/medium/far up-barrier and down-barrier examples using recent
+AUD/USD ATR to set barrier distances. This gives the model evaluation layer a broader
+set of scenarios than one long-tenor, near-barrier confirmation example.
+
 ## Calculation Summary
 
 For the target trade:
