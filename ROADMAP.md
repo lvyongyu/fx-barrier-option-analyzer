@@ -315,12 +315,12 @@ Exit criteria:
 
 ## Recommended Immediate Next Step
 
-Build Phase 2:
+Build Phase 3:
 
 ```text
-feature_engine.py
-tests/test_feature_engine.py
-CLI feature snapshot output
+volatility bucket comparison
+volatility-adjusted probability
+fallback to historical baseline when comparable samples are too low
 ```
 
 Do not build Streamlit, FastAPI, or SQLite until the forward-estimate features are useful enough to show.

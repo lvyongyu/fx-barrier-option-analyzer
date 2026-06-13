@@ -66,6 +66,23 @@ yfinance.download("AUDUSD=X", period="2y")
 
 Automatic download and analysis are currently scoped to `AUD/USD` only.
 
+The CLI also prints a current price-derived feature snapshot:
+
+```text
+Current feature snapshot:
+As of: 2026-06-13
+Realized vol 20d: 8.00%
+Realized vol 60d: 9.70%
+ATR 14d: 0.78%
+Trend 20d: -1.14%
+Trend 60d: 0.58%
+Range position 60d: -7.72%
+Recent high distance: 7.02%
+Recent low distance: -0.50%
+```
+
+These features are not yet a model. They are the inputs needed for the next volatility/regime-adjusted estimate.
+
 By default, the CLI prints a readable summary. Add `--json` if you want the raw structured result:
 
 ```bash
@@ -100,3 +117,5 @@ For every historical AUD/USD trading day:
 ```text
 touch_probability = touch_count / sample_count
 ```
+
+Feature snapshots use only market data available on or before the snapshot date. Tests cover this no-look-ahead boundary.

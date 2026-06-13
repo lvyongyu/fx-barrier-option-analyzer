@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from src.barrier_engine import TouchProbabilityResult
+from src.feature_engine import FeatureSnapshot
 
 
-def format_summary(result: TouchProbabilityResult) -> str:
+def format_summary(result: TouchProbabilityResult, features: FeatureSnapshot | None = None) -> str:
     lines = [
         f"{result.pair} barrier analysis",
         f"Product: {result.product_type}",
@@ -40,6 +41,23 @@ def format_summary(result: TouchProbabilityResult) -> str:
         ]
     )
 
+    if features:
+        lines.extend(
+            [
+                "",
+                "Current feature snapshot:",
+                f"As of: {features.as_of_date}",
+                f"Realized vol 20d: {_format_optional_pct(features.realized_vol_20d)}",
+                f"Realized vol 60d: {_format_optional_pct(features.realized_vol_60d)}",
+                f"ATR 14d: {_format_optional_pct(features.atr_14d)}",
+                f"Trend 20d: {_format_optional_pct(features.trend_20d)}",
+                f"Trend 60d: {_format_optional_pct(features.trend_60d)}",
+                f"Range position 60d: {_format_optional_pct(features.range_position_60d)}",
+                f"Recent high distance: {_format_optional_pct(features.recent_high_distance)}",
+                f"Recent low distance: {_format_optional_pct(features.recent_low_distance)}",
+            ]
+        )
+
     actual_path = result.actual_path
     lines.extend(["", "Actual path check:"])
     if not actual_path.is_applicable:
@@ -56,3 +74,9 @@ def format_summary(result: TouchProbabilityResult) -> str:
         lines.append(f"Min low: {actual_path.min_low:.4f}")
 
     return "\n".join(lines)
+
+
+def _format_optional_pct(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    return f"{value:.2f}%"

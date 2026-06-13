@@ -7,6 +7,7 @@ import json
 
 from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import download_audusd_prices
+from src.feature_engine import build_feature_snapshot
 from src.reporting import format_summary
 
 
@@ -50,10 +51,11 @@ def main() -> None:
         expiry_time_zone=args.expiry_time_zone,
     )
     result = calculate_touch_probability(trade, prices)
+    features = build_feature_snapshot(trade, prices)
     if args.json:
-        print(json.dumps(asdict(result), default=str, indent=2))
+        print(json.dumps({"result": asdict(result), "features": asdict(features)}, default=str, indent=2))
     else:
-        print(format_summary(result))
+        print(format_summary(result, features))
 
 
 if __name__ == "__main__":

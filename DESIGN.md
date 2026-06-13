@@ -421,6 +421,16 @@ Example:
   "historical_samples": 3124,
   "touch_count": 1410,
   "historical_baseline_probability": 45.1,
+  "features": {
+    "realized_vol_20d": 8.0,
+    "realized_vol_60d": 9.7,
+    "atr_14d": 0.78,
+    "trend_20d": -1.14,
+    "trend_60d": 0.58,
+    "range_position_60d": -7.72,
+    "recent_high_distance": 7.02,
+    "recent_low_distance": -0.50
+  },
   "volatility_adjusted_probability": null,
   "model_probability": null,
   "probability_used": 45.1,
