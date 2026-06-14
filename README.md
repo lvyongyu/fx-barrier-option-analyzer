@@ -113,6 +113,11 @@ USD/JPY -> USDJPY=X
 
 The default pair is `AUD/USD`.
 
+For CNH pairs, Yahoo Finance direct history can be sparse. The current data
+loader may fall back to a CNY proxy path, for example deriving AUD/CNH from
+AUD/USD and USD/CNY history. Treat those results as proxy-based until a better
+institutional data source is added.
+
 ## Confirmation Structure
 
 Real Corpay confirmations may contain multiple scheduled expiries. The Uniwell confirmation maps to:
@@ -238,7 +243,12 @@ Optional inputs:
 
 If `trade_date` and `spot` are left blank, the report is a current-market risk check. If the latest spot is already beyond the barrier in the selected barrier direction, the touch probability can be 100%. To reproduce the original trade-date view, enter the original `trade_date` and `spot`.
 
-The workflow prints the forecast report in the run log and uploads `forecast_report.txt` as an artifact.
+The workflow prints the forecast report in the run log and uploads these artifacts:
+
+- `forecast_report.txt`
+- `forecast_report.pdf`
+- `forecast_payload.json`
+- `agent_review.json`
 
 Add `--save-db` to persist research data into SQLite:
 
@@ -453,7 +463,7 @@ days_to_expiry = expiry_date - trade_date
 distance_pct = (barrier - spot) / spot
 ```
 
-For every historical AUD/USD trading day:
+For every historical trading day for the selected pair:
 
 1. Use that day's close as synthetic spot.
 2. Apply the target trade's `distance_pct`.

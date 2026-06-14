@@ -2,7 +2,7 @@
 
 ## 1. Product Goal
 
-Build a lightweight analysis system for FX barrier option trades, starting with AUD/USD.
+Build a lightweight analysis system for FX barrier option trades, starting with AUD/USD and now supporting configurable FX pairs.
 
 The system's end goal is to estimate:
 
@@ -10,10 +10,10 @@ The system's end goal is to estimate:
 P(Barrier Hit Before Expiry)
 ```
 
-This is not a traditional FX point-forecasting system. It does not predict the final AUD/USD level or only the direction of AUD/USD. It estimates a path-dependent event:
+This is not a traditional FX point-forecasting system. It does not predict the final spot level or only the direction of the selected pair. It estimates a path-dependent event:
 
 ```text
-Will AUD/USD touch the barrier before expiry?
+Will the selected FX pair touch the barrier before expiry?
 ```
 
 The first implementation uses historical touch frequency as a baseline prior. Later versions must improve that baseline with current volatility, market regime, and forward-looking features.
@@ -50,7 +50,7 @@ The answer should eventually combine:
 
 ### Real Product Examples
 
-The system should support Corpay-style `Ratio Convertible Forward` structures for AUD/USD.
+The system should support Corpay-style `Ratio Convertible Forward` structures for FX pairs such as AUD/USD and AUD/CNH.
 
 Example fields from real trade sheets:
 
@@ -59,7 +59,7 @@ Example fields from real trade sheets:
 | Ratio Convertible Forward | Importer | AUD/USD | USD 500,000 | USD 1,000,000 | 0.6850 | 0.6935 | Continuous | 2026-12-30 |
 | Ratio Convertible Forward | Importer | AUD/USD | USD 1,000,000 | USD 2,000,000 | 0.6850 | 0.6935 | Continuous | 2026-12-30 |
 
-AUD/CNH examples are useful for understanding the broader product family, but they are out of scope for the current implementation.
+AUD/CNH is supported through configurable pair input. If direct Yahoo Finance CNH history is sparse, the data layer may use a documented proxy such as AUD/USD multiplied by USD/CNY history.
 
 Options expire at 3:00 p.m. Tokyo time in these examples.
 
@@ -104,7 +104,7 @@ The MVP should stay deliberately small.
 
 Included:
 
-- Download AUD/USD daily OHLC data from Yahoo Finance ticker `AUDUSD=X`.
+- Download selected FX daily OHLC data from Yahoo Finance.
 - Enter one trade manually.
 - Calculate days to expiry.
 - Calculate distance to barrier.
@@ -118,7 +118,7 @@ Excluded from MVP:
 - News analysis.
 - LLM-generated probability.
 - Trading execution.
-- Multi-currency or non-AUD/USD support.
+- Full institutional market-data sourcing beyond Yahoo Finance.
 - Full volatility-adjusted probability.
 - Full pricing model or option Greeks.
 
@@ -308,10 +308,18 @@ Required fields:
 | low | decimal | Daily low |
 | close | decimal | Daily close |
 
-MVP data should be downloaded automatically from Yahoo Finance:
+Market data should be downloaded automatically from Yahoo Finance. The default pair is AUD/USD:
 
 ```python
 yfinance.download("AUDUSD=X", period="2y")
+```
+
+Other pairs are mapped to Yahoo-style FX tickers where available:
+
+```text
+EUR/USD -> EURUSD=X
+USD/JPY -> USDJPY=X
+AUD/CNH -> AUDCNH=X, with fallback/proxy handling if direct history is sparse
 ```
 
 Default period should be short at first:
@@ -340,7 +348,7 @@ Column names should be treated case-insensitively.
 | id | integer | Internal ID |
 | product_type | string | Example: Ratio Convertible Forward |
 | client_direction | string | Example: Importer |
-| pair | string | MVP: AUD/USD |
+| pair | string | Example: AUD/USD, EUR/USD, AUD/CNH |
 | trade_date | date | Trade start date |
 | spot | decimal | Spot at trade date |
 | strike | decimal | Option strike |
@@ -359,7 +367,7 @@ Column names should be treated case-insensitively.
 | --- | --- | --- |
 | customer | string | Customer legal name |
 | trade_date | date | Confirmation trade date |
-| pair | string | Current scope: AUD/USD |
+| pair | string | Example: AUD/USD |
 | base_currency | string | Example: AUD |
 | quote_terms | string | Example: USD per 1 AUD |
 | references | list | Confirmation reference numbers |
@@ -433,7 +441,7 @@ Later versions should create one feature row per synthetic historical trade date
 Start simple.
 
 ```text
-yfinance AUDUSD=X data
+yfinance FX data
    |
    v
 barrier_engine.py
@@ -458,7 +466,10 @@ src/
   barrier_engine.py      # pure calculation logic
   data_loader.py         # yfinance download and data validation
   feature_engine.py      # volatility, trend, and regime features
-  probability_model.py   # calibrated forward touch estimate
+  price_model.py         # experimental calibrated forward touch estimate
+  barrier_theory.py      # GBM barrier-touch baseline
+  pdf_report.py          # PDF report rendering
+  agent.py              # deterministic agent parser/reviewer
   repository.py          # SQLite reads/writes
   app_streamlit.py       # UI, added after engine is tested
 tests/
@@ -497,7 +508,7 @@ Reject or warn on:
 - Barrier less than or equal to zero.
 - Missing OHLC columns.
 - Empty market data.
-- Unsupported pair.
+- Unsupported or unavailable pair data.
 - Unsupported barrier direction.
 
 For MVP, if historical data does not extend far enough for a complete forward window, that sample should be excluded from `sample_count`.

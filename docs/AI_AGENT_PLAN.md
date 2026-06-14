@@ -74,6 +74,26 @@ AI Report Reviewer
 Final analyst memo
 ```
 
+## Current Implementation Status
+
+Implemented:
+
+- `src.agent.parse_forecast_request`
+- `src.agent.review_forecast_payload`
+- `python -m src.agent_cli parse-request`
+- `python -m src.agent_cli review-json`
+- GitHub Action artifact `agent_review.json`
+- deterministic fallback behavior with no API key or network dependency
+
+Not implemented yet:
+
+- OpenAI API integration.
+- LLM-authored analyst memo.
+- Natural-language request field inside GitHub Actions.
+- Automatic conversion from parsed request JSON into a model run.
+- Bilateral request parsing that returns both upper and lower barriers in one object.
+- Forward-start probability integration.
+
 ## Phase A: AI Report Reviewer
 
 This is the safest first AI feature because it does not change the probability
@@ -435,19 +455,26 @@ continue to work exactly as today.
 - Never call touch probability "profit probability".
 - Never let LLM invent future spot for a forward-start window.
 
-## Recommended First Build
+## Recommended Next Build
 
 Build in this order:
 
-1. `docs/AI_AGENT_PLAN.md`
-2. Static prompt templates in `src/agent_prompts.py`
-3. Pydantic or dataclass schemas for parsed requests and review output
-4. Unit tests for natural-language parsing examples
-5. Optional OpenAI client wrapper
-6. GitHub Action optional AI review step
+1. Add a bilateral request schema for "涨跌 3%" style questions.
+2. Add deterministic bilateral parser output:
+   - upper move
+   - lower move
+   - horizon
+   - pair
+3. Add optional OpenAI client wrapper for parser/reviewer only.
+4. Add GitHub Action optional `natural_language_question`.
+5. Add LLM memo artifact only when `OPENAI_API_KEY` is present.
+6. Keep deterministic `agent_review.json` artifact in all runs.
 
-The first shippable user value should be:
+The next shippable user value should be:
 
 ```text
-Run model -> AI reviews result -> user gets clearer explanation and warnings
+User asks "AUD/CNH up or down 3% in 3 months"
+-> agent parses bilateral request
+-> engine runs both sides
+-> report explains upper/lower/either/both probabilities
 ```

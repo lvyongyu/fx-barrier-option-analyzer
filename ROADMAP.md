@@ -1,5 +1,63 @@
 # FX Barrier Option Analyzer - Roadmap
 
+## Current State - 2026-06-14
+
+The project has moved beyond the original AUD/USD-only MVP.
+
+Implemented:
+
+- Configurable FX pair input via `--pair`.
+- Yahoo Finance ticker normalization, e.g. `AUD/USD -> AUDUSD=X`.
+- Sparse CNH direct-history fallback using a CNY proxy path where needed.
+- Historical touch baseline.
+- Volatility-adjusted historical estimate.
+- Price-only logistic model with walk-forward metrics.
+- DXY/VIX external feature experiment.
+- Driftless GBM barrier-theory estimate.
+- Train-calibrated GBM/historical blend.
+- Forecast-style text reports.
+- PDF report generation with `--pdf`.
+- GitHub Actions manual forecast workflow.
+- GitHub artifact upload:
+  - `forecast_report.txt`
+  - `forecast_report.pdf`
+  - `forecast_payload.json`
+  - `agent_review.json`
+- Local deterministic agent helpers:
+  - natural-language request parser
+  - model-result reviewer
+- AI agent integration plan.
+
+Important current limitation:
+
+The model estimates path-touch probability, not expiry close probability and not
+profit probability. For example, `P(touch +4%)` and `P(touch -4%)` can both be
+high because the two events can both occur inside the same 3-month window.
+
+## Next Version Focus
+
+The next version should not start with UI. The highest-value improvements are:
+
+1. Bilateral move analysis:
+   - `P(touch upper)`
+   - `P(touch lower)`
+   - `P(touch either)`
+   - `P(touch both)`
+2. Forward-start forecasting:
+   - today to future start-date spot distribution
+   - future start-date to expiry barrier touch estimate
+3. Data quality layer:
+   - direct Yahoo history versus synthetic cross/proxy history
+   - sample count warnings
+   - sparse-history fallback visibility in reports
+4. Agent upgrade:
+   - optional OpenAI reviewer/parser
+   - deterministic fallback remains default
+5. Report quality:
+   - clearer final probability naming
+   - distinguish touch probability, expiry probability, and payoff probability
+   - better PDF layout and optional chart/table sections
+
 ## Phase 0 - Design Lock
 
 Goal:
@@ -35,13 +93,13 @@ Deliverables:
 
 - `barrier_engine.py`
 - `test_barrier_engine.py`
-- `data_loader.py` using `yfinance.download("AUDUSD=X", period="2y")` for development
+- `data_loader.py` using Yahoo Finance FX tickers for development
 - Small in-memory fixture data for tests
 - CLI or simple script entry point, optional
 
 Core functions:
 
-- Download and normalize AUD/USD OHLC data.
+- Download and normalize FX OHLC data.
 - Support longer research windows such as `period="10y"` or `period="max"` for backtesting and training.
 - Calculate `days_to_expiry`.
 - Calculate `distance_pct`.
@@ -63,7 +121,7 @@ Exit criteria:
 - Tests pass locally.
 - Output can reproduce a known hand-worked example.
 - No UI, API, or database logic is mixed into the engine.
-- Scope remains fixed to AUD/USD.
+- Scope initially remains fixed to AUD/USD.
 
 ## Phase 2 - Feature Engine
 
@@ -77,7 +135,7 @@ Deliverables:
 - Feature snapshot for the current trade.
 - Historical feature snapshots for synthetic trade dates.
 - Tests proving no look-ahead leakage.
-- AUD/USD-only assumptions documented explicitly.
+- Pair-scoped assumptions documented explicitly.
 
 Trade metadata:
 
@@ -107,6 +165,7 @@ Exit criteria:
 - Features for a historical synthetic trade date use only data available on or before that date.
 - Current trade feature snapshot is printed alongside the historical baseline.
 - Tests cover volatility, trend, and leakage boundaries.
+- Status: complete for price-derived features.
 
 ## Phase 3 - Volatility-Adjusted Estimate
 
@@ -165,7 +224,7 @@ Tables:
 Exit criteria:
 
 - Market price storage is idempotent by `date + pair`.
-- `pair` is fixed to AUD/USD in this phase.
+- `pair` is stored in all relevant tables.
 - Feature datasets can be regenerated and compared.
 - One analysis result can be saved and reloaded.
 - Engine and model remain independent from SQLite.
@@ -175,7 +234,7 @@ Exit criteria:
 
 Goal:
 
-Train the first probability model for `BarrierHitBeforeExpiry` using AUD/USD price-derived features only.
+Train the first probability model for `BarrierHitBeforeExpiry` using selected-pair price-derived features only.
 
 Deliverables:
 
@@ -269,7 +328,7 @@ Status:
 
 Goal:
 
-Add external features that may help estimate future AUD/USD path risk.
+Add external features that may help estimate future FX path risk.
 
 Candidate data:
 
@@ -291,7 +350,153 @@ Exit criteria:
 - Finding: DXY/VIX did not improve the current sample-trade batch evaluation.
 - Next: pause additional external features until GBM calibration and label design are improved.
 
-## Phase 7 - Minimal UI
+## Phase 6.5 - Bilateral Path Probability
+
+Goal:
+
+Answer natural user questions such as:
+
+```text
+Will AUD/USD move up or down 4% in the next 3 months?
+```
+
+The current system can run the up and down legs separately, but it cannot yet
+estimate the relationship between them.
+
+Deliverables:
+
+- Bilateral request type:
+  - pair
+  - horizon or expiry
+  - upper move or upper barrier
+  - lower move or lower barrier
+- Path labels:
+  - upper touched
+  - lower touched
+  - either touched
+  - both touched
+  - first touch side, if knowable from daily data
+- Output:
+  - `P(touch upper)`
+  - `P(touch lower)`
+  - `P(touch either)`
+  - `P(touch both)`
+- Text/PDF report sections explaining non-mutual exclusivity.
+
+Exit criteria:
+
+- Tests show that upper and lower touch events are not treated as complements.
+- Historical samples can label `both` correctly using daily high/low.
+- Report warns that daily OHLC cannot determine intraday sequence when both
+  barriers touch on the same daily bar.
+
+## Phase 6.6 - Forward-Start Forecasts
+
+Goal:
+
+Handle questions where the barrier window starts in the future:
+
+```text
+From 2026-09-30 to 2026-12-30, will AUD/USD touch 0.6935?
+```
+
+Current limitation:
+
+The model needs a starting spot. If the start date is in the future, that spot
+does not exist yet. The user should not be asked to provide it as if it were
+known.
+
+Deliverables:
+
+- Forward-start request schema:
+  - analysis date
+  - forward start date
+  - expiry date
+  - pair
+  - barrier
+  - direction
+- Projected forward-start spot distribution:
+  - p10
+  - p25
+  - p50
+  - p75
+  - p90
+- Conditional barrier touch probability per scenario.
+- Integrated probability across the projected start distribution.
+
+Exit criteria:
+
+- Agent parser detects forward-start questions and does not invent future spot.
+- Report clearly separates:
+  - current spot
+  - projected start-date distribution
+  - conditional touch probabilities
+  - integrated final estimate
+
+## Phase 6.7 - Data Quality And Proxy Layer
+
+Goal:
+
+Make data-source reliability explicit, especially for non-major pairs.
+
+Motivation:
+
+Yahoo Finance may provide full history for `AUDCNY=X` but only one row for
+`AUDCNH=X`. The analyzer can build proxy history, but the report must disclose
+that choice.
+
+Deliverables:
+
+- Market data provenance object:
+  - requested pair
+  - direct ticker
+  - rows returned
+  - fallback method, if any
+  - proxy components, if any
+- Report data-quality section.
+- Warnings for:
+  - low direct row count
+  - proxy cross-rate use
+  - low historical sample count
+  - missing volatility features
+
+Exit criteria:
+
+- AUD/CNH report states whether it used direct `AUDCNH=X` or proxy data.
+- GitHub artifacts include the data-quality metadata in JSON.
+
+## Phase 7 - Agent Integration With Optional LLM
+
+Goal:
+
+Upgrade the local deterministic agent layer into an optional LLM-assisted
+workflow while keeping deterministic output as the source of truth.
+
+Deliverables:
+
+- Optional OpenAI API integration, disabled by default.
+- `OPENAI_API_KEY` based configuration.
+- Agent modes:
+  - parse natural-language request
+  - review model report
+  - generate analyst memo
+- Strict JSON schemas for model-facing output.
+- Fallback to local deterministic parser/reviewer if the LLM is unavailable.
+
+Rules:
+
+- LLM must not calculate the probability.
+- LLM must not hide model disagreement.
+- LLM must not call touch probability profit probability.
+- LLM must not invent future start-date spot.
+
+Exit criteria:
+
+- Unit tests cover schema validation and deterministic fallback.
+- GitHub Action can optionally produce an LLM-style memo when a key is present.
+- The deterministic model output remains visible in artifacts.
+
+## Phase 8 - Minimal UI
 
 Goal:
 
@@ -307,11 +512,11 @@ Streamlit.
 
 Deliverables:
 
-- Automatic AUD/USD data refresh.
+- Automatic FX pair data refresh.
 - Manual trade form.
 - Analyze button.
 - Result card.
-- Simple AUD/USD chart with:
+- Simple FX chart with:
   - close price
   - strike line
   - barrier line
@@ -330,11 +535,11 @@ Displayed metrics:
 
 Exit criteria:
 
-- User can refresh AUD/USD data and analyze one trade from the browser.
+- User can refresh selected FX data and analyze one trade from the browser.
 - Result matches CLI output.
 - UI contains no duplicated calculation logic.
 
-## Phase 8 - API Layer, If Needed
+## Phase 9 - API Layer, If Needed
 
 Goal:
 
@@ -362,7 +567,7 @@ Decision gate:
 
 Only build this phase if there is a real integration need. If Streamlit is enough, skip this phase.
 
-## Phase 9 - Explanation Layer
+## Phase 10 - Explanation Layer
 
 Goal:
 
@@ -388,12 +593,14 @@ Exit criteria:
 
 ## Recommended Immediate Next Step
 
-Build confirmation-level analysis:
+Build bilateral probability analysis:
 
 ```text
-analyze all knockout legs in one confirmation
-print one probability row per scheduled expiry
-keep PDF parsing manual for now
+P(touch upper)
+P(touch lower)
+P(touch either)
+P(touch both)
 ```
 
-Do not build Streamlit or FastAPI until the forward-estimate logic is useful enough to show.
+Then build forward-start forecasts. Do not build Streamlit or FastAPI until the
+probability workflow can answer these two real user questions cleanly.
