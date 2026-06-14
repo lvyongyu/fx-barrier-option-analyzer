@@ -66,6 +66,35 @@ python -m src.analyze \
   --period 2y
 ```
 
+## Bilateral Move Analysis
+
+Use bilateral analysis for questions like:
+
+```text
+未来3个月 AUD/CNH 是否涨跌 3%？
+```
+
+Example:
+
+```bash
+python -m src.bilateral_cli \
+  --pair AUD/CNH \
+  --period 5y \
+  --move-pct 3 \
+  --horizon-days 92 \
+  --pdf reports/audcnh_3m_bilateral_3pct_forecast.pdf
+```
+
+This reports:
+
+- `P(touch upper)`
+- `P(touch lower)`
+- `P(touch either)`
+- `P(touch both)`
+
+Upper and lower touch events are not complements. A pair can touch both barriers
+inside the same forecast window.
+
 Corpay-style Ratio Convertible Forward example:
 
 The screenshot-style Corpay input maps to:
