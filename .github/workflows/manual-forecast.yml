@@ -78,9 +78,14 @@ jobs:
           fi
 
           python -m src.analyze "${ARGS[@]}" | tee forecast_report.txt
+          python -m src.analyze "${ARGS[@]}" --json > forecast_payload.json
+          python -m src.agent_cli review-json forecast_payload.json > agent_review.json
 
-      - name: Upload forecast report
+      - name: Upload forecast artifacts
         uses: actions/upload-artifact@v4
         with:
           name: forecast-report
-          path: forecast_report.txt
+          path: |
+            forecast_report.txt
+            forecast_payload.json
+            agent_review.json

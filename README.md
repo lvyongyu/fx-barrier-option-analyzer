@@ -28,6 +28,30 @@ If your machine does not expose `python3.12`, use any Python 3.12+ interpreter p
 pytest
 ```
 
+## Local Agent Helpers
+
+The first agent layer is local and deterministic. It does not call an LLM yet.
+
+Parse a natural-language forecast request:
+
+```bash
+python -m src.agent_cli parse-request "想预测一下未来3个月audusd是否跌1.5%"
+```
+
+Review a machine-readable model payload:
+
+```bash
+python -m src.analyze \
+  --pair AUD/USD \
+  --expiry-date 2026-09-13 \
+  --strike 0.704871 \
+  --barrier 0.694298 \
+  --barrier-direction down \
+  --json > forecast_payload.json
+
+python -m src.agent_cli review-json forecast_payload.json
+```
+
 ## Analyze A Trade
 
 ```bash
