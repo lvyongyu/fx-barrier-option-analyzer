@@ -10,6 +10,7 @@ from src.barrier_engine import Trade, calculate_touch_probability
 from src.data_loader import DEFAULT_PAIR, download_fx_prices, normalize_pair_label, resolve_market_date_and_spot
 from src.external_features import build_external_feature_snapshot, download_external_market_data
 from src.feature_engine import build_feature_snapshot
+from src.pdf_report import write_pdf_report
 from src.price_model import evaluate_price_only_model, evaluate_price_plus_external_model
 from src.repository import (
     connect,
@@ -47,6 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include-external-features", action="store_true", help="download DXY/VIX and print external features")
     parser.add_argument("--report-style", default="summary", choices=["summary", "forecast"])
     parser.add_argument("--json", action="store_true", help="print raw JSON instead of a readable summary")
+    parser.add_argument("--pdf", help="optional path for writing the readable report as a PDF")
     return parser.parse_args()
 
 
@@ -137,6 +139,8 @@ def main() -> None:
             current_external_features,
         )
     if args.json:
+        if args.pdf:
+            raise ValueError("--pdf cannot be combined with --json")
         print(
             json.dumps(
                 {
@@ -160,17 +164,18 @@ def main() -> None:
         )
     else:
         formatter = format_forecast_report if args.report_style == "forecast" else format_summary
-        print(
-            formatter(
-                result=result,
-                features=features,
-                volatility_adjustment=volatility_adjustment,
-                price_model=price_model_evaluation,
-                external_features=external_features,
-                price_plus_external_model=price_plus_external_model_evaluation,
-                barrier_theory=barrier_theory_evaluation,
-            )
+        report_text = formatter(
+            result=result,
+            features=features,
+            volatility_adjustment=volatility_adjustment,
+            price_model=price_model_evaluation,
+            external_features=external_features,
+            price_plus_external_model=price_plus_external_model_evaluation,
+            barrier_theory=barrier_theory_evaluation,
         )
+        if args.pdf:
+            write_pdf_report(report_text, args.pdf)
+        print(report_text)
 
 
 if __name__ == "__main__":

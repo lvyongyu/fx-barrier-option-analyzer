@@ -77,7 +77,7 @@ jobs:
             ARGS+=(--spot "${{ inputs.spot }}")
           fi
 
-          python -m src.analyze "${ARGS[@]}" | tee forecast_report.txt
+          python -m src.analyze "${ARGS[@]}" --pdf forecast_report.pdf | tee forecast_report.txt
           python -m src.analyze "${ARGS[@]}" --json > forecast_payload.json
           python -m src.agent_cli review-json forecast_payload.json > agent_review.json
 
@@ -87,5 +87,6 @@ jobs:
           name: forecast-report
           path: |
             forecast_report.txt
+            forecast_report.pdf
             forecast_payload.json
             agent_review.json
