@@ -4,6 +4,9 @@ The project estimates whether an FX pair will touch a barrier before expiry. It 
 
 Current focus: improve the probability engine and model evaluation. UI and API work are intentionally deferred.
 
+AI agent integration is planned as an interpretation and workflow layer, not as
+a replacement for the probability engine. See [AI Agent Plan](docs/AI_AGENT_PLAN.md).
+
 ## Requirements
 
 - Python 3.12+
