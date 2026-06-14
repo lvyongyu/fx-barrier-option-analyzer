@@ -3,7 +3,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from src.data_loader import normalize_pair_label, pair_to_yahoo_ticker, resolve_market_date_and_spot
+from src.data_loader import build_cross_rate_prices, normalize_pair_label, pair_to_yahoo_ticker, resolve_market_date_and_spot
 
 
 def test_normalize_pair_label_accepts_slash_dash_and_compact_forms() -> None:
@@ -62,6 +62,25 @@ def test_resolve_market_date_and_spot_filters_requested_pair() -> None:
 
     assert resolved_date == date(2026, 6, 10)
     assert spot == 1.105
+
+
+def test_build_cross_rate_prices_multiplies_base_usd_by_usd_quote() -> None:
+    base_usd = pd.DataFrame(
+        [
+            {"date": "2026-06-10", "pair": "AUD/USD", "open": 0.70, "high": 0.71, "low": 0.69, "close": 0.705},
+        ]
+    )
+    usd_quote = pd.DataFrame(
+        [
+            {"date": "2026-06-10", "pair": "USD/CNH", "open": 7.10, "high": 7.20, "low": 7.00, "close": 7.15},
+        ]
+    )
+
+    cross = build_cross_rate_prices("AUD/CNH", base_usd, usd_quote)
+
+    assert cross.iloc[0]["pair"] == "AUD/CNH"
+    assert cross.iloc[0]["open"] == 0.70 * 7.10
+    assert cross.iloc[0]["close"] == 0.705 * 7.15
 
 
 def make_prices() -> pd.DataFrame:

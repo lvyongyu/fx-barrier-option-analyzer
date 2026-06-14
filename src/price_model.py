@@ -134,7 +134,7 @@ def prepare_model_dataset(dataset: pd.DataFrame, feature_columns: list[str] | No
     required = ["as_of_date", TARGET_COLUMN, *feature_columns]
     missing = [column for column in required if column not in dataset.columns]
     if missing:
-        raise ValueError(f"training dataset missing columns: {', '.join(missing)}")
+        return pd.DataFrame(columns=required)
 
     prepared = dataset.copy()
     prepared["as_of_date"] = pd.to_datetime(prepared["as_of_date"])

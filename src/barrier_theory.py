@@ -196,7 +196,7 @@ def _prepare_theory_dataset(dataset: pd.DataFrame, volatility_column: str) -> pd
     required = ["as_of_date", "days_to_expiry", "distance_pct", volatility_column, TARGET_COLUMN]
     missing = [column for column in required if column not in dataset.columns]
     if missing:
-        raise ValueError(f"training dataset missing columns: {', '.join(missing)}")
+        return pd.DataFrame(columns=required)
 
     prepared = dataset.copy()
     prepared["as_of_date"] = pd.to_datetime(prepared["as_of_date"])

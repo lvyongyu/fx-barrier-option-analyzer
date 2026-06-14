@@ -136,6 +136,22 @@ def test_evaluate_barrier_theory_model_returns_probability_and_metrics() -> None
     assert sum(bucket.sample_count for bucket in evaluation.blended_calibration_buckets) == evaluation.test_rows
 
 
+def test_evaluate_barrier_theory_model_falls_back_for_empty_dataset() -> None:
+    evaluation = evaluate_barrier_theory_model(
+        pd.DataFrame(),
+        {
+            "distance_pct": 3.0,
+            "days_to_expiry": 92,
+            "realized_vol_20d": 8.0,
+        },
+    )
+
+    assert evaluation.current_snapshot.probability is not None
+    assert evaluation.blended_probability is None
+    assert evaluation.used_fallback is True
+    assert evaluation.fallback_reason == "training dataset has no usable rows"
+
+
 def make_prices(days: int = 260) -> pd.DataFrame:
     start = date(2026, 1, 1)
     rows = []

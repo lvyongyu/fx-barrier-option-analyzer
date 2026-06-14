@@ -1,8 +1,6 @@
 from datetime import date, timedelta
 
 import pandas as pd
-import pytest
-
 from src.barrier_engine import Trade
 from src.feature_engine import build_feature_snapshot
 from src.price_model import (
@@ -89,11 +87,19 @@ def test_evaluate_price_plus_external_model_uses_external_columns() -> None:
     assert prepare_model_dataset(dataset, price_plus_external_feature_columns()).shape[0] == len(dataset)
 
 
-def test_prepare_model_dataset_requires_feature_columns() -> None:
+def test_prepare_model_dataset_returns_empty_frame_when_columns_are_missing() -> None:
     dataset = pd.DataFrame({"as_of_date": ["2026-01-01"], "target_barrier_hit": [True]})
 
-    with pytest.raises(ValueError, match="missing columns"):
-        prepare_model_dataset(dataset)
+    prepared = prepare_model_dataset(dataset)
+
+    assert prepared.empty
+
+
+def test_evaluate_price_only_model_falls_back_for_empty_dataset() -> None:
+    evaluation = evaluate_price_only_model(pd.DataFrame(), {})
+
+    assert evaluation.used_fallback is True
+    assert evaluation.fallback_reason == "training dataset has no usable rows"
 
 
 def test_price_only_feature_columns_are_stable() -> None:
