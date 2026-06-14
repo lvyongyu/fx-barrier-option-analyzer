@@ -3,6 +3,10 @@ name: Manual FX Barrier Forecast
 on:
   workflow_dispatch:
     inputs:
+      pair:
+        description: "FX pair, e.g. AUD/USD, EUR/USD, USD/JPY"
+        required: true
+        default: "AUD/USD"
       expiry_date:
         description: "Barrier expiry date, YYYY-MM-DD"
         required: true
@@ -52,6 +56,7 @@ jobs:
         run: |
           ARGS=(
             --product-type "Ratio Convertible Forward"
+            --pair "${{ inputs.pair }}"
             --client-direction Importer
             --amount-currency USD
             --expiry-date "${{ inputs.expiry_date }}"

@@ -7,7 +7,7 @@ import json
 
 from src.barrier_theory import evaluate_barrier_theory_model
 from src.barrier_engine import Trade, calculate_touch_probability
-from src.data_loader import download_audusd_prices, resolve_market_date_and_spot
+from src.data_loader import DEFAULT_PAIR, download_fx_prices, normalize_pair_label, resolve_market_date_and_spot
 from src.external_features import build_external_feature_snapshot, download_external_market_data
 from src.feature_engine import build_feature_snapshot
 from src.price_model import evaluate_price_only_model, evaluate_price_plus_external_model
@@ -27,6 +27,7 @@ from src.volatility_adjustment import calculate_volatility_adjusted_probability
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Analyze FX barrier touch probability.")
+    parser.add_argument("--pair", default=DEFAULT_PAIR, help="FX pair, e.g. AUD/USD, EUR/USD, USD/JPY")
     parser.add_argument("--period", default="2y", help="yfinance period, default: 2y")
     parser.add_argument("--trade-date", type=date.fromisoformat)
     parser.add_argument("--expiry-date", required=True, type=date.fromisoformat)
@@ -51,14 +52,16 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    prices = download_audusd_prices(period=args.period)
+    pair = normalize_pair_label(args.pair)
+    prices = download_fx_prices(pair=pair, period=args.period)
     resolved_trade_date, resolved_spot = resolve_market_date_and_spot(
         prices,
         trade_date=args.trade_date,
         spot=args.spot,
+        pair=pair,
     )
     trade = Trade(
-        pair="AUD/USD",
+        pair=pair,
         trade_date=resolved_trade_date,
         spot=resolved_spot,
         strike=args.strike,

@@ -359,8 +359,8 @@ def _touch_rule(result: TouchProbabilityResult) -> str:
 
 def _market_move_tested(result: TouchProbabilityResult) -> str:
     if result.barrier_direction == "down":
-        return "AUD/USD falls to or below the barrier"
-    return "AUD/USD rises to or above the barrier"
+        return f"{result.pair} falls to or below the barrier"
+    return f"{result.pair} rises to or above the barrier"
 
 
 def _most_likely_outcome(probability: float | None) -> str:

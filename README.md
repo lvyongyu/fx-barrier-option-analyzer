@@ -1,6 +1,6 @@
 # FX Barrier Option Analyzer
 
-The project estimates whether AUD/USD will touch an FX barrier before expiry.
+The project estimates whether an FX pair will touch a barrier before expiry. It defaults to AUD/USD but can run other Yahoo Finance FX pairs such as EUR/USD, GBP/USD, USD/JPY, and AUD/CNH.
 
 Current focus: improve the probability engine and model evaluation. UI and API work are intentionally deferred.
 
@@ -29,6 +29,7 @@ pytest
 
 ```bash
 python -m src.analyze \
+  --pair AUD/USD \
   --trade-date 2026-04-15 \
   --expiry-date 2026-08-28 \
   --spot 0.6500 \
@@ -59,6 +60,7 @@ The current analyzer still requires manual `trade_date` and `spot`, because the 
 ```bash
 python -m src.analyze \
   --product-type "Ratio Convertible Forward" \
+  --pair AUD/USD \
   --client-direction Importer \
   --protected-amount 500000 \
   --ratio-amount 1000000 \
@@ -74,13 +76,15 @@ python -m src.analyze \
   --period 2y
 ```
 
-The default market data source is:
+FX market data is downloaded from Yahoo Finance. Pair labels are converted automatically:
 
-```python
-yfinance.download("AUDUSD=X", period="2y")
+```text
+AUD/USD -> AUDUSD=X
+EUR/USD -> EURUSD=X
+USD/JPY -> USDJPY=X
 ```
 
-Automatic download and analysis are currently scoped to `AUD/USD` only.
+The default pair is `AUD/USD`.
 
 ## Confirmation Structure
 
@@ -191,6 +195,7 @@ Actions -> Manual FX Barrier Forecast -> Run workflow
 
 Required inputs:
 
+- `pair`
 - `expiry_date`
 - `strike`
 - `barrier`
@@ -198,8 +203,8 @@ Required inputs:
 
 Optional inputs:
 
-- `trade_date`: analysis date, YYYY-MM-DD. If blank, use the latest AUD/USD market date
-- `spot`: AUD/USD spot on the analysis date. If blank, use AUD/USD close for `trade_date`
+- `trade_date`: analysis date, YYYY-MM-DD. If blank, use the latest market date for the selected pair
+- `spot`: spot on the analysis date. If blank, use the selected pair's close for `trade_date`
 - `period`: Yahoo Finance history window, default `5y`
 
 `protected_amount` and `ratio_amount` are intentionally not required because they affect payoff exposure, not barrier-touch probability.

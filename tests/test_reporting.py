@@ -292,8 +292,32 @@ def test_format_forecast_report_explains_downside_barrier_rule() -> None:
     assert "Market move tested: AUD/USD falls to or below the barrier" in report
 
 
+def test_format_forecast_report_uses_actual_pair_in_market_move() -> None:
+    result = result_with_path(
+        BarrierPathResult(
+            is_applicable=False,
+            reason="expiry_date is after available market data (2026-06-12)",
+            barrier_hit=False,
+            hit_date=None,
+            max_high=None,
+            min_low=None,
+            days_to_hit=None,
+        ),
+        pair="EUR/USD",
+        spot=1.0800,
+        barrier=1.1000,
+        distance_pct=1.8519,
+    )
+
+    report = format_forecast_report(result)
+
+    assert "Will EUR/USD touch the 1.1000 up barrier" in report
+    assert "Market move tested: EUR/USD rises to or above the barrier" in report
+
+
 def result_with_path(
     actual_path: BarrierPathResult,
+    pair: str = "AUD/USD",
     barrier_direction: str = "up",
     spot: float = 0.65,
     barrier: float = 0.705,
@@ -302,7 +326,7 @@ def result_with_path(
     return TouchProbabilityResult(
         product_type="Ratio Convertible Forward",
         client_direction="Importer",
-        pair="AUD/USD",
+        pair=pair,
         spot=spot,
         strike=0.685,
         barrier=barrier,
