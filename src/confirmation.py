@@ -95,7 +95,7 @@ def build_corpay_screenshot_input_example() -> CorpayTradeInput:
         barrier_level_period="continuous",
         expiry_date=date(2026, 12, 30),
         expiry_time_zone="Tokyo",
-        barrier_direction="up",
+        barrier_direction="down",
     )
 
 
@@ -170,7 +170,7 @@ def build_uniwell_confirmation_example() -> Confirmation:
                         option_buyer="Corpay",
                         strike=0.6900,
                         barrier=0.7050,
-                        barrier_direction="up",
+                        barrier_direction="down",
                         window_start_date=trade_date,
                         window_end_date=date(2026, 8, 28),
                         call_currency="AUD",
@@ -202,7 +202,7 @@ def build_uniwell_confirmation_example() -> Confirmation:
                         option_buyer="Corpay",
                         strike=0.6900,
                         barrier=0.7050,
-                        barrier_direction="up",
+                        barrier_direction="down",
                         window_start_date=trade_date,
                         window_end_date=date(2026, 9, 29),
                         call_currency="AUD",
@@ -234,7 +234,7 @@ def build_uniwell_confirmation_example() -> Confirmation:
                         option_buyer="Corpay",
                         strike=0.6900,
                         barrier=0.7050,
-                        barrier_direction="up",
+                        barrier_direction="down",
                         window_start_date=trade_date,
                         window_end_date=date(2026, 10, 29),
                         call_currency="AUD",

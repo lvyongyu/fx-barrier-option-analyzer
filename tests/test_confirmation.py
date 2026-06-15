@@ -45,7 +45,7 @@ def test_barrier_legs_to_trades_creates_one_trade_per_knockout_expiry() -> None:
     ]
     assert {trade.strike for trade in trades} == {0.6900}
     assert {trade.barrier for trade in trades} == {0.7050}
-    assert {trade.barrier_direction for trade in trades} == {"up"}
+    assert {trade.barrier_direction for trade in trades} == {"down"}
     assert {trade.barrier_level_period for trade in trades} == {"continuous"}
     assert {trade.protected_amount for trade in trades} == {500_000}
     assert {trade.ratio_amount for trade in trades} == {1_000_000}
@@ -99,5 +99,5 @@ def test_corpay_screenshot_input_example_maps_to_trade() -> None:
     assert trade.strike == 0.6850
     assert trade.barrier == 0.6935
     assert trade.expiry_date == date(2026, 12, 30)
-    assert trade.barrier_direction == "up"
+    assert trade.barrier_direction == "down"
     assert trade.expiry_time_zone == "Tokyo"
