@@ -33,7 +33,7 @@ from src.monitor import (
     position_summary_row,
     update_to_dict,
 )
-from src.notifications import NotificationError, is_configured, send_sms
+from src.notifications import NotificationError, any_channel_configured, send_alert
 from src.repository import (
     connect,
     init_db,
@@ -142,21 +142,22 @@ def cmd_check(args: argparse.Namespace) -> int:
                 continue
 
             message = build_alert_message(position, update)
+            subject = _alert_subject(position)
             print(f"  ALERT: {message}")
             if args.notify and not args.dry_run:
                 try:
-                    result = send_sms(message)
+                    result = send_alert(subject, message)
                     mark_alerted(data, update.position_id, now_iso)
                     alerts_sent += 1
-                    print(f"  SMS sent to {result.to_number} (sid={result.provider_sid})")
+                    print(f"  {result.channel} sent to {result.recipient}")
                 except NotificationError as error:
                     alert_failures += 1
-                    print(f"  SMS FAILED: {error}")
+                    print(f"  ALERT FAILED: {error}")
             else:
-                result = send_sms(message, dry_run=True)
+                result = send_alert(subject, message, dry_run=True)
                 if args.mark_dry_run_alerted:
                     mark_alerted(data, update.position_id, now_iso)
-                print(f"  (dry-run) would SMS {result.to_number}")
+                print(f"  (dry-run) would {result.channel} to {result.recipient}")
 
         if not args.no_write:
             for position in data["positions"]:
@@ -169,11 +170,18 @@ def cmd_check(args: argparse.Namespace) -> int:
     triggered = sum(1 for u in updates if u.newly_triggered)
     print(
         f"Checked {len(updates)} active position(s): {triggered} newly triggered, "
-        f"{alerts_sent} SMS sent, {alert_failures} failed."
+        f"{alerts_sent} alert(s) sent, {alert_failures} failed."
     )
-    if not is_configured() and any(u.should_alert for u in updates) and args.notify:
-        print("WARNING: SMS not configured (set TWILIO_* and ALERT_TO_NUMBER).")
+    if not any_channel_configured() and any(u.should_alert for u in updates) and args.notify:
+        print("WARNING: no alert channel configured (set GMAIL_ADDRESS + GMAIL_APP_PASSWORD).")
     return 1 if alert_failures else 0
+
+
+def _alert_subject(position: dict) -> str:
+    return (
+        f"Barrier triggered: {position.get('pair', '?')} "
+        f"{position.get('barrier')} {position.get('barrier_direction', '')}".strip()
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:

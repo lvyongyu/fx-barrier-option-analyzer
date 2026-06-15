@@ -119,7 +119,7 @@ Key design points:
 - Monitored positions are stored in their own SQLite table (`monitored_positions`), kept separate from research/sample trades. A small dedicated DB (`data/positions.sqlite3`) is version-controlled so a scheduled GitHub Actions run can persist status back; the larger research store (`data/research.sqlite3`) stays local-only.
 - The backtest hit-checker (`evaluate_actual_path`) requires the whole window to be in the past, which never holds for a live trade. Live monitoring uses a dedicated checker (`evaluate_live_path`) that scans `[trade_date, min(expiry_date, last_available_date)]`.
 - A position has a lifecycle: `active -> triggered` (barrier touched) or `active -> expired` (reached expiry untouched). Alerts are de-duplicated with an `alert_sent_at` timestamp, which is set only after the SMS is actually delivered. A triggered position keeps being re-checked until that send succeeds, so a transient SMS failure is retried on the next run rather than silently lost; once delivered, the position is done and never re-alerts.
-- Alert delivery is SMS via Twilio's REST API, configured purely through environment variables / CI secrets, with a dry-run mode. The notification layer is isolated so other channels can be added later.
+- Alert delivery goes through an isolated, pluggable notification layer (`notifications.send_alert`) that picks the first configured channel, preferring email (Gmail SMTP) with Twilio SMS as an optional fallback. Channels are configured purely through environment variables / CI secrets and support a dry-run mode. New channels (Telegram, webhook) can be added without touching the monitor logic.
 
 ## 3. MVP Scope
 
@@ -511,7 +511,7 @@ src/
   pdf_report.py          # PDF report rendering
   agent.py              # deterministic agent parser/reviewer
   monitor.py             # pure live-position logic (evaluate_live_path, status)
-  notifications.py       # SMS alerting (Twilio via stdlib), dry-run capable
+  notifications.py       # pluggable alerts: email (Gmail SMTP) + Twilio SMS, dry-run capable
   monitor_cli.py         # add/list/check real positions, sends alerts
   repository.py          # SQLite reads/writes (incl. monitored_positions)
   app_streamlit.py       # UI, added after engine is tested
@@ -525,8 +525,8 @@ Live monitoring reuses the pure barrier logic but adds an ongoing-data path:
 monitored_positions (SQLite)        scheduled GitHub Actions (daily)
         |                                      |
         v                                      v
-   monitor_cli.py  --->  monitor.evaluate_live_path  --->  notifications.send_sms
-        |                                                       (Twilio)
+   monitor_cli.py  --->  monitor.evaluate_live_path  --->  notifications.send_alert
+        |                                                  (email / Twilio SMS)
         v
    persist status back (commit data/positions.sqlite3)
 ```

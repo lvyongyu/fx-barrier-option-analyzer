@@ -149,7 +149,7 @@ institutional data source is added.
 
 ## Track Real Positions & Alert
 
-Monitor your *real* trades and get an SMS the moment a barrier is first touched.
+Monitor your *real* trades and get an email (or SMS) the moment a barrier is first touched.
 Live positions are stored in the `monitored_positions` table of a dedicated
 SQLite DB (`data/positions.sqlite3`), separate from the research store. That DB is
 small and **tracked in git** so a scheduled job can persist status back; the
@@ -181,9 +181,20 @@ A position moves `active -> triggered` (barrier touched) or `active -> expired`
 different SQLite file. Real Corpay confirmations are down-and-out, so use
 `--barrier-direction down` with a barrier below spot.
 
-### SMS configuration (Twilio)
+### Alert configuration
 
-SMS uses Twilio's REST API via the standard library (no extra dependency). Set:
+Alerts are delivered through the first configured channel, preferring **email**.
+The alert layer uses the standard library only (no extra dependency).
+
+**Email (Gmail SMTP) — recommended:**
+
+| Env var | Meaning |
+| --- | --- |
+| `GMAIL_ADDRESS` | sender Gmail address |
+| `GMAIL_APP_PASSWORD` | Gmail App Password (enable 2FA, then create an app password) |
+| `ALERT_EMAIL_TO` | recipient; optional, defaults to `GMAIL_ADDRESS` |
+
+**SMS (Twilio) — optional fallback:**
 
 | Env var | Meaning |
 | --- | --- |
@@ -195,10 +206,11 @@ SMS uses Twilio's REST API via the standard library (no extra dependency). Set:
 ### Daily check via GitHub Actions
 
 `.github/workflows/monitor-positions.yml` runs `check --notify` daily (21:10 UTC)
-and commits status changes back to `data/positions.sqlite3`. Add the four variables
-above as repository **secrets** (Settings → Secrets and variables → Actions). Use
-the workflow's manual `dry_run` input to test without sending SMS. Commit your
-populated `data/positions.sqlite3` so the cloud run can see your positions.
+and commits status changes back to `data/positions.sqlite3`. Add the variables
+above as repository **secrets** (Settings → Secrets and variables → Actions); for
+email you only need `GMAIL_ADDRESS` and `GMAIL_APP_PASSWORD`. Use the workflow's
+manual `dry_run` input to test without sending. Commit your populated
+`data/positions.sqlite3` so the cloud run can see your positions.
 
 ## Confirmation Structure
 

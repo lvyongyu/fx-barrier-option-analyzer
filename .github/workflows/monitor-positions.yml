@@ -1,9 +1,11 @@
 name: Monitor Barrier Positions
 
 # Daily check of real positions in data/positions.sqlite3. When a barrier is
-# first touched, an SMS fires (Twilio) and the updated status is committed back so
-# the alert is not repeated. Requires repository secrets:
-#   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, ALERT_TO_NUMBER
+# first touched, an email alert fires (Gmail SMTP) and the updated status is
+# committed back so the alert is not repeated. Requires repository secrets:
+#   GMAIL_ADDRESS, GMAIL_APP_PASSWORD   (recipient defaults to GMAIL_ADDRESS;
+#   set ALERT_EMAIL_TO to send elsewhere). Twilio SMS secrets are an optional
+#   fallback (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, ALERT_TO_NUMBER).
 
 on:
   schedule:
@@ -40,6 +42,9 @@ jobs:
 
       - name: Check positions and alert
         env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
