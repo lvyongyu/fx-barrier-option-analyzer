@@ -193,9 +193,12 @@ def check_positions(
     for position in data.get("positions", []):
         position_id = str(position.get("id", "<unnamed>"))
         previous_status = position.get("status", STATUS_ACTIVE)
+        already_alerted = bool(position.get("alert_sent_at"))
 
-        if previous_status in {STATUS_TRIGGERED, STATUS_EXPIRED}:
-            # Already terminal: record the check but do nothing else.
+        # A position is "done" only when it is expired, or triggered AND the alert
+        # was actually delivered. A position that triggered but whose SMS failed
+        # (alert_sent_at still empty) is NOT skipped, so the next run retries it.
+        if previous_status == STATUS_EXPIRED or (previous_status == STATUS_TRIGGERED and already_alerted):
             if now_iso:
                 position["last_checked"] = now_iso
             continue
@@ -212,15 +215,18 @@ def check_positions(
         position["status"] = new_status
 
         newly_triggered = new_status == STATUS_TRIGGERED and previous_status != STATUS_TRIGGERED
-        if newly_triggered:
+        if new_status == STATUS_TRIGGERED and not position.get("triggered_date"):
+            # Record trigger metadata once (also covers a retry where status was
+            # already 'triggered' but the fields were somehow not persisted).
             position["triggered_date"] = path.hit_date.isoformat() if path.hit_date else None
             position["triggered_price"] = path.hit_price
         if new_status == STATUS_EXPIRED and previous_status != STATUS_EXPIRED:
             position.setdefault("triggered_date", None)
 
-        # Alert only the first time a position triggers and has not been alerted.
-        already_alerted = bool(position.get("alert_sent_at"))
-        should_alert = newly_triggered and not already_alerted
+        # Alert whenever the position is triggered and not yet successfully
+        # alerted. This fires on the first touch AND retries a prior failed send
+        # (where status is already 'triggered' but alert_sent_at is still empty).
+        should_alert = new_status == STATUS_TRIGGERED and not already_alerted
 
         updates.append(
             PositionUpdate(

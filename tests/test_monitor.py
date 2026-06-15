@@ -163,6 +163,35 @@ def test_check_does_not_realert_already_triggered() -> None:
     assert data["positions"][0]["status"] == STATUS_TRIGGERED
 
 
+def test_check_retries_alert_when_triggered_but_not_alerted() -> None:
+    # Simulates a prior run where the barrier was detected (status set to
+    # triggered) but the SMS failed, so alert_sent_at is still empty.
+    position = new_position(
+        "audusd",
+        pair="AUD/USD",
+        trade_date=date(2026, 6, 1),
+        spot=0.685,
+        strike=0.685,
+        barrier=0.6935,
+        expiry_date=date(2026, 12, 30),
+    )
+    position["status"] = STATUS_TRIGGERED
+    position["triggered_date"] = "2026-06-12"
+    position["alert_sent_at"] = None
+    data = {"positions": [position]}
+    frame = prices(
+        row("2026-06-01", high=0.6860, low=0.6840, close=0.6850),
+        row("2026-06-12", high=0.6940, low=0.6880, close=0.6930),
+    )
+
+    updates = check_positions(data, _loader(frame), as_of=date(2026, 6, 15))
+
+    assert len(updates) == 1
+    assert updates[0].new_status == STATUS_TRIGGERED
+    assert updates[0].newly_triggered is False  # not a fresh trigger
+    assert updates[0].should_alert is True  # but still needs alerting (retry)
+
+
 def test_alert_suppressed_when_already_alerted_same_run_state() -> None:
     position = new_position(
         "audusd",

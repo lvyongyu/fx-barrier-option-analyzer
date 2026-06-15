@@ -118,7 +118,7 @@ Key design points:
 
 - Monitored positions are stored in their own SQLite table (`monitored_positions`), kept separate from research/sample trades. A small dedicated DB (`data/positions.sqlite3`) is version-controlled so a scheduled GitHub Actions run can persist status back; the larger research store (`data/research.sqlite3`) stays local-only.
 - The backtest hit-checker (`evaluate_actual_path`) requires the whole window to be in the past, which never holds for a live trade. Live monitoring uses a dedicated checker (`evaluate_live_path`) that scans `[trade_date, min(expiry_date, last_available_date)]`.
-- A position has a lifecycle: `active -> triggered` (barrier touched) or `active -> expired` (reached expiry untouched). Both are terminal. Alerts are de-duplicated with an `alert_sent_at` timestamp so a triggered position is announced exactly once.
+- A position has a lifecycle: `active -> triggered` (barrier touched) or `active -> expired` (reached expiry untouched). Alerts are de-duplicated with an `alert_sent_at` timestamp, which is set only after the SMS is actually delivered. A triggered position keeps being re-checked until that send succeeds, so a transient SMS failure is retried on the next run rather than silently lost; once delivered, the position is done and never re-alerts.
 - Alert delivery is SMS via Twilio's REST API, configured purely through environment variables / CI secrets, with a dry-run mode. The notification layer is isolated so other channels can be added later.
 
 ## 3. MVP Scope
