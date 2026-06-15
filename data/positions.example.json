@@ -1,0 +1,22 @@
+{
+  "positions": [
+    {
+      "id": "audusd-06935-down-dec2026",
+      "pair": "AUD/USD",
+      "trade_date": "2026-06-01",
+      "spot": 0.705,
+      "strike": 0.705,
+      "barrier": 0.6935,
+      "expiry_date": "2026-12-30",
+      "barrier_direction": "down",
+      "product_type": "Ratio Convertible Forward",
+      "client_direction": "Exporter",
+      "note": "example only - copy to data/positions.json and edit. Real Corpay confirmations are down-and-out (barrier below spot, direction=down).",
+      "status": "active",
+      "triggered_date": null,
+      "triggered_price": null,
+      "alert_sent_at": null,
+      "last_checked": null
+    }
+  ]
+}

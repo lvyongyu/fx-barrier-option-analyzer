@@ -147,6 +147,55 @@ loader may fall back to a CNY proxy path, for example deriving AUD/CNH from
 AUD/USD and USD/CNY history. Treat those results as proxy-based until a better
 institutional data source is added.
 
+## Track Real Positions & Alert
+
+Monitor your *real* trades and get an SMS the moment a barrier is first touched.
+Live positions live in `data/positions.json` (separate from the research SQLite
+store) so they can be committed to git and updated by a scheduled job.
+
+```bash
+# 1. (optional) run a forecast and save research data
+python -m src.analyze --pair AUD/USD --expiry-date 2026-12-30 \
+  --strike 0.7050 --barrier 0.6935 --barrier-direction down \
+  --save-db data/research.sqlite3
+
+# 2. register the real trade for monitoring
+python -m src.monitor_cli add \
+  --id audusd-06935-down-dec2026 --pair AUD/USD \
+  --trade-date 2026-06-01 --spot 0.7050 --strike 0.7050 \
+  --barrier 0.6935 --barrier-direction down --expiry-date 2026-12-30 \
+  --client-direction Exporter
+
+# 3. list tracked positions and their status
+python -m src.monitor_cli list
+
+# 4. check for fresh barrier touches (sends SMS on a new trigger)
+python -m src.monitor_cli check --notify        # add --dry-run to only print
+```
+
+A position moves `active -> triggered` (barrier touched) or `active -> expired`
+(passed expiry untouched). The first time a position triggers, one SMS is sent and
+`alert_sent_at` is recorded so it never re-alerts. Copy `data/positions.example.json`
+to get started.
+
+### SMS configuration (Twilio)
+
+SMS uses Twilio's REST API via the standard library (no extra dependency). Set:
+
+| Env var | Meaning |
+| --- | --- |
+| `TWILIO_ACCOUNT_SID` | Twilio account SID (`AC...`) |
+| `TWILIO_AUTH_TOKEN` | Twilio auth token |
+| `TWILIO_FROM_NUMBER` | sender number, E.164 (e.g. `+15555550123`) |
+| `ALERT_TO_NUMBER` | your phone, E.164 (e.g. `+8613800138000`) |
+
+### Daily check via GitHub Actions
+
+`.github/workflows/monitor-positions.yml` runs `check --notify` daily (21:10 UTC)
+and commits status changes back to `data/positions.json`. Add the four variables
+above as repository **secrets** (Settings → Secrets and variables → Actions). Use
+the workflow's manual `dry_run` input to test without sending SMS.
+
 ## Confirmation Structure
 
 Real Corpay confirmations may contain multiple scheduled expiries. The Uniwell confirmation maps to:
