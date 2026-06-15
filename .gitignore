@@ -5,3 +5,7 @@ __pycache__/
 *.pyc
 .DS_Store
 reports/
+
+# Research store is local-only and can grow large; the dedicated positions DB
+# (data/positions.sqlite3) IS tracked so the monitor workflow can persist status.
+data/research.sqlite3

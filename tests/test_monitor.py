@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import date
 
 import pandas as pd
@@ -10,11 +11,17 @@ from src.monitor import (
     build_alert_message,
     check_positions,
     evaluate_live_path,
-    load_positions,
     mark_alerted,
     new_position,
     position_to_trade,
-    save_positions,
+)
+from src.repository import (
+    init_db,
+    load_monitored_positions,
+    monitored_position_label_exists,
+    save_monitored_position,
+    table_count,
+    update_monitored_position_state,
 )
 
 
@@ -232,8 +239,7 @@ def test_build_alert_message_mentions_pair_barrier_and_date() -> None:
     assert "2026-06-12" in message
 
 
-def test_positions_round_trip(tmp_path) -> None:
-    path = tmp_path / "positions.json"
+def test_positions_db_round_trip_and_status_update() -> None:
     position = new_position(
         "audusd",
         pair="AUD/USD",
@@ -243,13 +249,32 @@ def test_positions_round_trip(tmp_path) -> None:
         barrier=0.6935,
         expiry_date=date(2026, 12, 30),
     )
-    save_positions({"positions": [position]}, path)
-    loaded = load_positions(path)
 
-    assert loaded["positions"][0]["id"] == "audusd"
-    trade = position_to_trade(loaded["positions"][0])
-    assert trade.barrier == 0.6935
-    assert trade.trade_date == date(2026, 6, 1)
+    with sqlite3.connect(":memory:") as connection:
+        connection.row_factory = sqlite3.Row
+        init_db(connection)
+
+        assert monitored_position_label_exists(connection, "audusd") is False
+        save_monitored_position(connection, position)
+        assert table_count(connection, "monitored_positions") == 1
+        assert monitored_position_label_exists(connection, "audusd") is True
+
+        loaded = load_monitored_positions(connection)
+        assert loaded[0]["id"] == "audusd"
+        trade = position_to_trade(loaded[0])
+        assert trade.barrier == 0.6935
+        assert trade.trade_date == date(2026, 6, 1)
+
+        # Mutate and persist back, then reload.
+        loaded[0]["status"] = STATUS_TRIGGERED
+        loaded[0]["triggered_date"] = "2026-06-12"
+        loaded[0]["alert_sent_at"] = "2026-06-12T00:00:00+00:00"
+        update_monitored_position_state(connection, loaded[0])
+
+        reloaded = load_monitored_positions(connection)
+        assert reloaded[0]["status"] == STATUS_TRIGGERED
+        assert reloaded[0]["triggered_date"] == "2026-06-12"
+        assert reloaded[0]["alert_sent_at"] == "2026-06-12T00:00:00+00:00"
 
 
 def test_mark_alerted_sets_timestamp() -> None:

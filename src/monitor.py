@@ -1,9 +1,9 @@
-"""Live monitoring layer for real barrier-option positions.
+"""Live monitoring logic for real barrier-option positions.
 
-This is separate from the research SQLite store used by ``src.analyze``. Real
-positions live in a small JSON file (default ``data/positions.json``) that is the
-single source of truth for monitoring and is safe to commit to git so a scheduled
-GitHub Actions run can persist status back.
+Persistence lives in the SQLite store (``src.repository.monitored_positions``);
+this module holds only the pure logic so it stays testable without a database.
+A *position* is a plain dict (the shape returned by
+``repository.load_monitored_positions``) keyed by ``id`` (the unique label).
 
 The backtest helper ``barrier_engine.evaluate_actual_path`` requires the whole
 trade window to be in the past. A live position usually expires in the FUTURE, so
@@ -12,18 +12,14 @@ here we evaluate touches over ``[trade_date, min(expiry, last_available)]`` inst
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from datetime import date
-from pathlib import Path
 from typing import Callable
 
 import pandas as pd
 
 from src.barrier_engine import Trade, normalize_direction, normalize_prices
 
-
-DEFAULT_POSITIONS_PATH = Path("data/positions.json")
 
 # Position lifecycle.
 STATUS_ACTIVE = "active"
@@ -72,24 +68,6 @@ class PositionUpdate:
     path: LivePathResult
     newly_triggered: bool
     should_alert: bool
-
-
-def load_positions(path: str | Path = DEFAULT_POSITIONS_PATH) -> dict:
-    file_path = Path(path)
-    if not file_path.exists():
-        return {"positions": []}
-    with file_path.open("r", encoding="utf-8") as handle:
-        data = json.load(handle)
-    data.setdefault("positions", [])
-    return data
-
-
-def save_positions(data: dict, path: str | Path = DEFAULT_POSITIONS_PATH) -> None:
-    file_path = Path(path)
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    with file_path.open("w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=2, ensure_ascii=False)
-        handle.write("\n")
 
 
 def position_to_trade(position: dict) -> Trade:

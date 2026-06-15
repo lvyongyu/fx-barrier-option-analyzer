@@ -150,8 +150,10 @@ institutional data source is added.
 ## Track Real Positions & Alert
 
 Monitor your *real* trades and get an SMS the moment a barrier is first touched.
-Live positions live in `data/positions.json` (separate from the research SQLite
-store) so they can be committed to git and updated by a scheduled job.
+Live positions are stored in the `monitored_positions` table of a dedicated
+SQLite DB (`data/positions.sqlite3`), separate from the research store. That DB is
+small and **tracked in git** so a scheduled job can persist status back; the
+research store (`data/research.sqlite3`) stays local-only and is gitignored.
 
 ```bash
 # 1. (optional) run a forecast and save research data
@@ -159,7 +161,7 @@ python -m src.analyze --pair AUD/USD --expiry-date 2026-12-30 \
   --strike 0.7050 --barrier 0.6935 --barrier-direction down \
   --save-db data/research.sqlite3
 
-# 2. register the real trade for monitoring
+# 2. register the real trade for monitoring (writes to data/positions.sqlite3)
 python -m src.monitor_cli add \
   --id audusd-06935-down-dec2026 --pair AUD/USD \
   --trade-date 2026-06-01 --spot 0.7050 --strike 0.7050 \
@@ -175,8 +177,9 @@ python -m src.monitor_cli check --notify        # add --dry-run to only print
 
 A position moves `active -> triggered` (barrier touched) or `active -> expired`
 (passed expiry untouched). The first time a position triggers, one SMS is sent and
-`alert_sent_at` is recorded so it never re-alerts. Copy `data/positions.example.json`
-to get started.
+`alert_sent_at` is recorded so it never re-alerts. Use `--db` to point at a
+different SQLite file. Real Corpay confirmations are down-and-out, so use
+`--barrier-direction down` with a barrier below spot.
 
 ### SMS configuration (Twilio)
 
@@ -192,9 +195,10 @@ SMS uses Twilio's REST API via the standard library (no extra dependency). Set:
 ### Daily check via GitHub Actions
 
 `.github/workflows/monitor-positions.yml` runs `check --notify` daily (21:10 UTC)
-and commits status changes back to `data/positions.json`. Add the four variables
+and commits status changes back to `data/positions.sqlite3`. Add the four variables
 above as repository **secrets** (Settings → Secrets and variables → Actions). Use
-the workflow's manual `dry_run` input to test without sending SMS.
+the workflow's manual `dry_run` input to test without sending SMS. Commit your
+populated `data/positions.sqlite3` so the cloud run can see your positions.
 
 ## Confirmation Structure
 

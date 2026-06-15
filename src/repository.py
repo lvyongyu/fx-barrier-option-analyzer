@@ -92,6 +92,29 @@ def init_db(connection: sqlite3.Connection) -> None:
             FOREIGN KEY (trade_id) REFERENCES trades(id)
         );
 
+        CREATE TABLE IF NOT EXISTS monitored_positions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            label TEXT NOT NULL UNIQUE,
+            trade_id INTEGER,
+            pair TEXT NOT NULL,
+            trade_date TEXT NOT NULL,
+            spot REAL NOT NULL,
+            strike REAL NOT NULL,
+            barrier REAL NOT NULL,
+            expiry_date TEXT NOT NULL,
+            barrier_direction TEXT NOT NULL,
+            product_type TEXT,
+            client_direction TEXT,
+            note TEXT,
+            status TEXT NOT NULL DEFAULT 'active',
+            triggered_date TEXT,
+            triggered_price REAL,
+            alert_sent_at TEXT,
+            last_checked TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (trade_id) REFERENCES trades(id)
+        );
+
         CREATE TABLE IF NOT EXISTS volatility_adjustments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             analysis_result_id INTEGER NOT NULL,
@@ -283,6 +306,108 @@ def save_volatility_adjustment(
     return int(cursor.lastrowid)
 
 
+# --- Live monitored positions ------------------------------------------------
+#
+# These rows are the source of truth for real-trade monitoring (see src.monitor).
+# A position dict uses "id" for the unique label so it round-trips with the pure
+# logic in src.monitor; the DB stores it in the `label` column.
+
+_MONITORED_POSITION_FIELDS = (
+    "pair",
+    "trade_date",
+    "spot",
+    "strike",
+    "barrier",
+    "expiry_date",
+    "barrier_direction",
+    "product_type",
+    "client_direction",
+    "note",
+    "status",
+    "triggered_date",
+    "triggered_price",
+    "alert_sent_at",
+    "last_checked",
+)
+
+
+def save_monitored_position(connection: sqlite3.Connection, position: dict, trade_id: int | None = None) -> int:
+    cursor = connection.execute(
+        """
+        INSERT INTO monitored_positions (
+            label, trade_id, pair, trade_date, spot, strike, barrier, expiry_date,
+            barrier_direction, product_type, client_direction, note, status,
+            triggered_date, triggered_price, alert_sent_at, last_checked
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            position["id"],
+            trade_id,
+            position["pair"],
+            position["trade_date"],
+            float(position["spot"]),
+            float(position["strike"]),
+            float(position["barrier"]),
+            position["expiry_date"],
+            position["barrier_direction"],
+            position.get("product_type"),
+            position.get("client_direction"),
+            position.get("note"),
+            position.get("status", "active"),
+            position.get("triggered_date"),
+            position.get("triggered_price"),
+            position.get("alert_sent_at"),
+            position.get("last_checked"),
+        ),
+    )
+    return int(cursor.lastrowid)
+
+
+def load_monitored_positions(connection: sqlite3.Connection) -> list[dict]:
+    rows = connection.execute(
+        """
+        SELECT label, pair, trade_date, spot, strike, barrier, expiry_date,
+               barrier_direction, product_type, client_direction, note, status,
+               triggered_date, triggered_price, alert_sent_at, last_checked
+        FROM monitored_positions
+        ORDER BY id
+        """
+    ).fetchall()
+    positions: list[dict] = []
+    for row in rows:
+        position = {field: row[field] for field in _MONITORED_POSITION_FIELDS}
+        position["id"] = row["label"]
+        positions.append(position)
+    return positions
+
+
+def update_monitored_position_state(connection: sqlite3.Connection, position: dict) -> None:
+    connection.execute(
+        """
+        UPDATE monitored_positions
+        SET status = ?, triggered_date = ?, triggered_price = ?,
+            alert_sent_at = ?, last_checked = ?
+        WHERE label = ?
+        """,
+        (
+            position.get("status", "active"),
+            position.get("triggered_date"),
+            position.get("triggered_price"),
+            position.get("alert_sent_at"),
+            position.get("last_checked"),
+            position["id"],
+        ),
+    )
+
+
+def monitored_position_label_exists(connection: sqlite3.Connection, label: str) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM monitored_positions WHERE label = ? LIMIT 1", (label,)
+    ).fetchone()
+    return row is not None
+
+
 def table_count(connection: sqlite3.Connection, table_name: str) -> int:
     allowed = {
         "market_prices",
@@ -290,6 +415,7 @@ def table_count(connection: sqlite3.Connection, table_name: str) -> int:
         "feature_snapshots",
         "analysis_results",
         "volatility_adjustments",
+        "monitored_positions",
     }
     if table_name not in allowed:
         raise ValueError(f"unsupported table: {table_name}")

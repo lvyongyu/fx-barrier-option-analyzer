@@ -1,8 +1,8 @@
 name: Monitor Barrier Positions
 
-# Daily check of real positions in data/positions.json. When a barrier is first
-# touched, an SMS fires (Twilio) and the updated status is committed back so the
-# alert is not repeated. Requires repository secrets:
+# Daily check of real positions in data/positions.sqlite3. When a barrier is
+# first touched, an SMS fires (Twilio) and the updated status is committed back so
+# the alert is not repeated. Requires repository secrets:
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, ALERT_TO_NUMBER
 
 on:
@@ -46,7 +46,7 @@ jobs:
           ALERT_TO_NUMBER: ${{ secrets.ALERT_TO_NUMBER }}
         shell: bash
         run: |
-          ARGS=(check --positions data/positions.json --period 2y)
+          ARGS=(--db data/positions.sqlite3 check --period 2y)
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             ARGS+=(--dry-run)
           else
@@ -58,10 +58,10 @@ jobs:
         if: ${{ inputs.dry_run != 'true' }}
         shell: bash
         run: |
-          if [[ -n "$(git status --porcelain data/positions.json)" ]]; then
+          if [[ -n "$(git status --porcelain data/positions.sqlite3)" ]]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/positions.json
+            git add data/positions.sqlite3
             git commit -m "Update barrier position status [skip ci]"
             git push
           else
