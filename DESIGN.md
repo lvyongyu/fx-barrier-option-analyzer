@@ -18,6 +18,11 @@ Will the selected FX pair touch the barrier before expiry?
 
 The first implementation uses historical touch frequency as a baseline prior. Later versions must improve that baseline with current volatility, market regime, and forward-looking features.
 
+The system runs in two complementary modes:
+
+1. **One-off analysis** - estimate `P(Barrier Hit Before Expiry)` for a single trade on demand (the original goal above).
+2. **Live position monitoring** - track the user's real open trades over time and raise an SMS alert the first day a barrier is actually touched, so the user knows to act. This consumes the same barrier-hit logic but against ongoing market data rather than a backtest window.
+
 ## 2. Core Use Case
 
 Given a Corpay-style ratio convertible forward trade:
@@ -97,6 +102,24 @@ Confirmation
 ```
 
 The current implementation maps each knockout leg into one per-expiry `Trade` that can be analyzed independently.
+
+### Live Position Monitoring
+
+Beyond one-off analysis, the user maintains a register of their real open trades and wants to be alerted the moment a barrier triggers. The workflow is:
+
+```text
+1. Run a forecast for the trade (src.analyze), optionally save research data.
+2. Register the real trade as a monitored position (src.monitor_cli add).
+3. A scheduled job checks each active position daily against fresh market data.
+4. The first day the barrier is touched, send one SMS alert and stop re-alerting.
+```
+
+Key design points:
+
+- Monitored positions are stored in their own SQLite table (`monitored_positions`), kept separate from research/sample trades. A small dedicated DB (`data/positions.sqlite3`) is version-controlled so a scheduled GitHub Actions run can persist status back; the larger research store (`data/research.sqlite3`) stays local-only.
+- The backtest hit-checker (`evaluate_actual_path`) requires the whole window to be in the past, which never holds for a live trade. Live monitoring uses a dedicated checker (`evaluate_live_path`) that scans `[trade_date, min(expiry_date, last_available_date)]`.
+- A position has a lifecycle: `active -> triggered` (barrier touched) or `active -> expired` (reached expiry untouched). Both are terminal. Alerts are de-duplicated with an `alert_sent_at` timestamp so a triggered position is announced exactly once.
+- Alert delivery is SMS via Twilio's REST API, configured purely through environment variables / CI secrets, with a dry-run mode. The notification layer is isolated so other channels can be added later.
 
 ## 3. MVP Scope
 
@@ -361,6 +384,23 @@ Column names should be treated case-insensitively.
 | ratio_amount | decimal | Leveraged notional if applicable |
 | option_type | string | Optional: call/put |
 
+### MonitoredPosition
+
+A real open trade registered for live barrier monitoring. Stored in the `monitored_positions` table, separate from research/sample trades.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| id | integer | Internal ID |
+| label | string | Unique human label, e.g. `audusd-06935-down-dec2026` |
+| trade_id | integer | Optional link to a saved `Trade` row |
+| pair / trade_date / spot / strike / barrier / expiry_date / barrier_direction | - | Trade terms (same meaning as `Trade`) |
+| product_type / client_direction / note | string | Descriptive metadata |
+| status | string | `active`, `triggered`, or `expired` |
+| triggered_date | date | First day the barrier was touched, if any |
+| triggered_price | decimal | Daily high (up) or low (down) that breached the barrier |
+| alert_sent_at | datetime | When the SMS alert was sent; null until alerted (dedup guard) |
+| last_checked | datetime | Timestamp of the most recent monitoring run |
+
 ### Confirmation
 
 | Field | Type | Notes |
@@ -470,10 +510,25 @@ src/
   barrier_theory.py      # GBM barrier-touch baseline
   pdf_report.py          # PDF report rendering
   agent.py              # deterministic agent parser/reviewer
-  repository.py          # SQLite reads/writes
+  monitor.py             # pure live-position logic (evaluate_live_path, status)
+  notifications.py       # SMS alerting (Twilio via stdlib), dry-run capable
+  monitor_cli.py         # add/list/check real positions, sends alerts
+  repository.py          # SQLite reads/writes (incl. monitored_positions)
   app_streamlit.py       # UI, added after engine is tested
 tests/
   test_barrier_engine.py
+```
+
+Live monitoring reuses the pure barrier logic but adds an ongoing-data path:
+
+```text
+monitored_positions (SQLite)        scheduled GitHub Actions (daily)
+        |                                      |
+        v                                      v
+   monitor_cli.py  --->  monitor.evaluate_live_path  --->  notifications.send_sms
+        |                                                       (Twilio)
+        v
+   persist status back (commit data/positions.sqlite3)
 ```
 
 Important design rule:
@@ -594,6 +649,8 @@ The next model step is calibration around the transparent GBM/barrier-theory bas
 - DXY/VIX are experimental context features, not proven predictive features.
 - No macro, news, or implied-volatility inputs are trusted as core probability drivers yet.
 - No option pricing or payoff modeling in MVP.
+- Live monitoring uses daily OHLC, so barrier-touch alerts fire on the scheduled run after the touch closes a day, not intraday/real-time. Latency is up to ~1 day plus the cron interval.
+- Monitoring depends on Yahoo Finance availability and the scheduled job running; a missed or delayed data day delays the alert.
 
 ## 15. Design Principles
 

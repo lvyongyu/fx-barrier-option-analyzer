@@ -1,6 +1,6 @@
 # FX Barrier Option Analyzer - Roadmap
 
-## Current State - 2026-06-14
+## Current State - 2026-06-15
 
 The project has moved beyond the original AUD/USD-only MVP.
 
@@ -27,6 +27,12 @@ Implemented:
   - natural-language request parser
   - model-result reviewer
 - AI agent integration plan.
+- Live position monitoring with SMS alerts:
+  - real trades registered in a dedicated `monitored_positions` SQLite table
+  - `src.monitor_cli add/list/check`
+  - `evaluate_live_path` for not-yet-expired trades
+  - once-per-position Twilio SMS alert on first barrier touch
+  - daily GitHub Actions workflow that persists status back to the repo
 
 Important current limitation:
 
@@ -590,6 +596,39 @@ Exit criteria:
 
 - Explanation is clearly separated from calculation.
 - Output includes source and confidence notes.
+
+## Phase 11 - Live Position Monitoring
+
+Goal:
+
+Track the user's real open trades and alert them the day a barrier triggers.
+
+Deliverables (implemented):
+
+- `monitored_positions` SQLite table and repository CRUD.
+- `monitor.py` pure logic: `evaluate_live_path`, status lifecycle, alert dedup.
+- `monitor_cli.py`: `add`, `list`, `check` subcommands.
+- `notifications.py`: Twilio SMS via the standard library, dry-run capable.
+- `monitor-positions.yml`: daily scheduled check that commits status back.
+
+Status lifecycle:
+
+```text
+active -> triggered   (barrier touched; one SMS sent)
+active -> expired     (reached expiry untouched)
+```
+
+Possible follow-ups:
+
+- Additional alert channels (email, push, IM) behind the notification layer.
+- Commit-on-change-only to reduce CI history churn from daily `last_checked`.
+- Optional intraday data source for lower alert latency.
+- Surface the latest touch-probability forecast alongside each alert.
+
+Exit criteria:
+
+- A registered position reliably triggers exactly one alert on first touch.
+- Status persists across scheduled runs without duplicate alerts.
 
 ## Recommended Immediate Next Step
 
