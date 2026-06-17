@@ -165,7 +165,7 @@ def test_check_does_not_realert_already_triggered() -> None:
 
 def test_check_retries_alert_when_triggered_but_not_alerted() -> None:
     # Simulates a prior run where the barrier was detected (status set to
-    # triggered) but the SMS failed, so alert_sent_at is still empty.
+    # triggered) but the email failed, so alert_sent_at is still empty.
     position = new_position(
         "audusd",
         pair="AUD/USD",

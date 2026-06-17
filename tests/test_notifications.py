@@ -1,13 +1,9 @@
 import pytest
 
 from src.notifications import (
-    ENV_ACCOUNT_SID,
     ENV_ALERT_EMAIL_TO,
-    ENV_AUTH_TOKEN,
-    ENV_FROM_NUMBER,
     ENV_GMAIL_ADDRESS,
     ENV_GMAIL_APP_PASSWORD,
-    ENV_TO_NUMBER,
     NotificationError,
     any_channel_configured,
     configured_channel,
@@ -20,10 +16,6 @@ ALL_ENV = (
     ENV_GMAIL_ADDRESS,
     ENV_GMAIL_APP_PASSWORD,
     ENV_ALERT_EMAIL_TO,
-    ENV_ACCOUNT_SID,
-    ENV_AUTH_TOKEN,
-    ENV_FROM_NUMBER,
-    ENV_TO_NUMBER,
 )
 
 

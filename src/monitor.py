@@ -196,7 +196,7 @@ def check_positions(
         already_alerted = bool(position.get("alert_sent_at"))
 
         # A position is "done" only when it is expired, or triggered AND the alert
-        # was actually delivered. A position that triggered but whose SMS failed
+        # was actually delivered. A position that triggered but whose email failed
         # (alert_sent_at still empty) is NOT skipped, so the next run retries it.
         if previous_status == STATUS_EXPIRED or (previous_status == STATUS_TRIGGERED and already_alerted):
             if now_iso:
@@ -250,7 +250,7 @@ def mark_alerted(data: dict, position_id: str, now_iso: str) -> None:
 
 
 def build_alert_message(position: dict, update: PositionUpdate) -> str:
-    """Short SMS-friendly body for a newly triggered position."""
+    """Short email body for a newly triggered position."""
 
     path = update.path
     direction = position.get("barrier_direction", "up")

@@ -4,8 +4,7 @@ name: Monitor Barrier Positions
 # first touched, an email alert fires (Gmail SMTP) and the updated status is
 # committed back so the alert is not repeated. Requires repository secrets:
 #   GMAIL_ADDRESS, GMAIL_APP_PASSWORD   (recipient defaults to GMAIL_ADDRESS;
-#   set ALERT_EMAIL_TO to send elsewhere). Twilio SMS secrets are an optional
-#   fallback (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, ALERT_TO_NUMBER).
+#   set ALERT_EMAIL_TO to send elsewhere).
 
 on:
   schedule:
@@ -14,7 +13,11 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Do not send SMS, only log what would be sent"
+        description: "Do not send email, only log what would be sent"
+        required: false
+        default: "false"
+      test_alert:
+        description: "Send a one-off test email instead of checking positions"
         required: false
         default: "false"
 
@@ -45,12 +48,12 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
-          ALERT_TO_NUMBER: ${{ secrets.ALERT_TO_NUMBER }}
         shell: bash
         run: |
+          if [ "${{ inputs.test_alert }}" = "true" ]; then
+            python -m src.monitor_cli test-alert
+            exit 0
+          fi
           ARGS=(--db data/positions.sqlite3 check --period 2y)
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             ARGS+=(--dry-run)
@@ -60,7 +63,7 @@ jobs:
           python -m src.monitor_cli "${ARGS[@]}"
 
       - name: Commit status changes
-        if: ${{ inputs.dry_run != 'true' }}
+        if: ${{ inputs.dry_run != 'true' && inputs.test_alert != 'true' }}
         shell: bash
         run: |
           if [[ -n "$(git status --porcelain data/positions.sqlite3)" ]]; then

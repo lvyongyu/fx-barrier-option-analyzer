@@ -11,8 +11,10 @@ Workflow:
          python -m src.monitor_cli add --id audusd-06935-down-dec2026 --pair AUD/USD \\
              --trade-date 2026-06-01 --spot 0.7050 --strike 0.7050 \\
              --barrier 0.6935 --barrier-direction down --expiry-date 2026-12-30
-  3. Check positions (locally or from GitHub Actions); SMS fires on a fresh touch:
+  3. Check positions (locally or from GitHub Actions); an email fires on a fresh touch:
          python -m src.monitor_cli check --notify
+  4. Verify the email channel end-to-end any time:
+         python -m src.monitor_cli test-alert
 """
 
 from __future__ import annotations
@@ -184,6 +186,29 @@ def _alert_subject(position: dict) -> str:
     )
 
 
+def cmd_test_alert(args: argparse.Namespace) -> int:
+    """Send a one-off test email to confirm the alert channel works."""
+    subject = "FX barrier monitor — test alert"
+    body = (
+        "This is a test alert from the FX barrier monitor. "
+        "If you received this email, barrier-touch alerting is configured correctly."
+    )
+    if args.dry_run:
+        result = send_alert(subject, body, dry_run=True)
+        print(f"(dry-run) would {result.channel} to {result.recipient}")
+        return 0
+    if not any_channel_configured():
+        print("No alert channel configured. Set GMAIL_ADDRESS + GMAIL_APP_PASSWORD.")
+        return 1
+    try:
+        result = send_alert(subject, body)
+    except NotificationError as error:
+        print(f"TEST ALERT FAILED: {error}")
+        return 1
+    print(f"Test alert sent via {result.channel} to {result.recipient}.")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Monitor real barrier positions and alert on touches.")
     parser.add_argument(
@@ -214,8 +239,8 @@ def build_parser() -> argparse.ArgumentParser:
     check = sub.add_parser("check", help="evaluate positions and alert on fresh barrier touches")
     check.add_argument("--period", default="2y", help="Yahoo history window for the touch scan")
     check.add_argument("--as-of", type=date.fromisoformat, help="override 'today' (testing/backfill)")
-    check.add_argument("--notify", action="store_true", help="actually send SMS on fresh triggers")
-    check.add_argument("--dry-run", action="store_true", help="never send SMS, only print")
+    check.add_argument("--notify", action="store_true", help="actually send the email alert on fresh triggers")
+    check.add_argument("--dry-run", action="store_true", help="never send email, only print")
     check.add_argument("--no-write", action="store_true", help="do not persist status back to the DB")
     check.add_argument(
         "--mark-dry-run-alerted",
@@ -224,6 +249,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check.add_argument("--json", action="store_true", help="also print machine-readable updates")
     check.set_defaults(func=cmd_check)
+
+    test = sub.add_parser("test-alert", help="send a one-off test email to verify the alert channel")
+    test.add_argument("--dry-run", action="store_true", help="format only, do not send")
+    test.set_defaults(func=cmd_test_alert)
 
     return parser
 
