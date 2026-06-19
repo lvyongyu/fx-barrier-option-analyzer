@@ -26,7 +26,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.data_loader import download_fx_prices, normalize_pair_label
+from src.data_loader import (
+    DEFAULT_INTRADAY_DAYS,
+    DEFAULT_INTRADAY_INTERVAL,
+    download_fx_prices,
+    download_fx_prices_with_intraday,
+    normalize_pair_label,
+)
 from src.monitor import (
     build_alert_message,
     check_positions,
@@ -53,9 +59,23 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def _make_price_loader(period: str):
+def _make_price_loader(
+    period: str,
+    *,
+    intraday: bool = True,
+    intraday_days: int = DEFAULT_INTRADAY_DAYS,
+    intraday_interval: str = DEFAULT_INTRADAY_INTERVAL,
+):
     def loader(pair: str) -> pd.DataFrame:
-        return download_fx_prices(pair=normalize_pair_label(pair), period=period)
+        normalized = normalize_pair_label(pair)
+        if intraday:
+            return download_fx_prices_with_intraday(
+                pair=normalized,
+                period=period,
+                intraday_days=intraday_days,
+                intraday_interval=intraday_interval,
+            )
+        return download_fx_prices(pair=normalized, period=period)
 
     return loader
 
@@ -127,7 +147,12 @@ def cmd_check(args: argparse.Namespace) -> int:
 
         now_iso = _now_iso()
         as_of = args.as_of or date.today()
-        loader = _make_price_loader(args.period)
+        loader = _make_price_loader(
+            args.period,
+            intraday=not args.no_intraday,
+            intraday_days=args.intraday_days,
+            intraday_interval=args.intraday_interval,
+        )
         data = {"positions": positions}
         updates = check_positions(data, loader, as_of=as_of, now_iso=now_iso)
 
@@ -238,6 +263,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser("check", help="evaluate positions and alert on fresh barrier touches")
     check.add_argument("--period", default="2y", help="Yahoo history window for the touch scan")
+    check.add_argument(
+        "--no-intraday",
+        action="store_true",
+        help="skip the intraday high/low overlay and scan daily bars only",
+    )
+    check.add_argument(
+        "--intraday-days",
+        type=int,
+        default=DEFAULT_INTRADAY_DAYS,
+        help=f"recent days to overlay with intraday high/low (default: {DEFAULT_INTRADAY_DAYS})",
+    )
+    check.add_argument(
+        "--intraday-interval",
+        default=DEFAULT_INTRADAY_INTERVAL,
+        help=f"intraday bar size for the overlay, e.g. 1m/5m (default: {DEFAULT_INTRADAY_INTERVAL})",
+    )
     check.add_argument("--as-of", type=date.fromisoformat, help="override 'today' (testing/backfill)")
     check.add_argument("--notify", action="store_true", help="actually send the email alert on fresh triggers")
     check.add_argument("--dry-run", action="store_true", help="never send email, only print")
