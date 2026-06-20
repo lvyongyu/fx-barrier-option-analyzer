@@ -41,7 +41,7 @@ load_dotenv()
 # On Streamlit Community Cloud, credentials are provided via the app's secrets
 # manager (st.secrets). Mirror them into the environment so connect_positions()
 # (which reads os.environ) finds them, whether running on Cloud or locally.
-for _key in ("TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN"):
+for _key in ("TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN", "UI_PASSWORD"):
     if not os.environ.get(_key):
         try:
             if _key in st.secrets:
@@ -90,7 +90,32 @@ def validate(values: dict, existing_ids: set[str]) -> list[str]:
     return errors
 
 
+def require_login() -> bool:
+    """Password gate. If UI_PASSWORD is unset the app is open (local dev); when
+    set (e.g. on Streamlit Cloud) a correct password is required to continue."""
+    expected = os.environ.get("UI_PASSWORD")
+    if not expected:
+        return True
+    if st.session_state.get("authenticated"):
+        return True
+    st.title("🔒 Barrier Position Manager")
+    with st.form("login"):
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Sign in")
+    if submitted:
+        if password == expected:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect password.")
+    return False
+
+
 st.set_page_config(page_title="Barrier Positions", layout="wide")
+
+if not require_login():
+    st.stop()
+
 st.title("📊 Barrier Position Manager")
 
 positions = load_positions()
