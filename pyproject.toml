@@ -9,6 +9,8 @@ dependencies = [
     "reportlab>=4.2",
     "scikit-learn>=1.5",
     "yfinance>=0.2.51",
+    "libsql-experimental>=0.0.55",
+    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]

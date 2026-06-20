@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 from dataclasses import asdict
 from pathlib import Path
@@ -12,6 +13,7 @@ from src.volatility_adjustment import VolatilityAdjustedResult
 
 
 DEFAULT_DB_PATH = Path("data/research.sqlite3")
+DEFAULT_POSITIONS_DB_PATH = Path("data/positions.sqlite3")
 
 
 def connect(db_path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
@@ -20,6 +22,126 @@ def connect(db_path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
     connection = sqlite3.connect(path)
     connection.row_factory = sqlite3.Row
     return connection
+
+
+# --- Turso (libSQL) support for the positions store -------------------------
+#
+# The monitored-positions store can live in a hosted Turso (libSQL) database so
+# the UI (terms) and GitHub Actions (knockout state) write concurrently without
+# git binary-merge conflicts. The libSQL client returns plain tuples and is not
+# a context manager, so the thin adapter below makes it quack like the sqlite3
+# connection the rest of this module expects (row["col"] access + `with`).
+#
+# When TURSO_DATABASE_URL + TURSO_AUTH_TOKEN are unset we fall back to a local
+# sqlite file, so tests and offline development never need the network.
+
+
+class _Row(dict):
+    """Row supporting both ``row["col"]`` and ``row[0]`` like ``sqlite3.Row``."""
+
+    def __init__(self, columns: list[str], values: tuple) -> None:
+        super().__init__(zip(columns, values))
+        self._values = tuple(values)
+
+    def __getitem__(self, key):  # type: ignore[override]
+        if isinstance(key, int):
+            return self._values[key]
+        return super().__getitem__(key)
+
+
+class _CursorAdapter:
+    def __init__(self, cursor) -> None:
+        self._cursor = cursor
+
+    @property
+    def lastrowid(self):
+        return self._cursor.lastrowid
+
+    @property
+    def description(self):
+        return self._cursor.description
+
+    @property
+    def rowcount(self):
+        return self._cursor.rowcount
+
+    def _columns(self) -> list[str]:
+        return [d[0] for d in (self._cursor.description or [])]
+
+    def execute(self, sql: str, params=None) -> "_CursorAdapter":
+        self._cursor.execute(sql) if params is None else self._cursor.execute(sql, params)
+        return self
+
+    def fetchone(self):
+        row = self._cursor.fetchone()
+        return None if row is None else _Row(self._columns(), row)
+
+    def fetchall(self) -> list:
+        columns = self._columns()
+        return [_Row(columns, row) for row in self._cursor.fetchall()]
+
+    def __iter__(self):
+        return iter(self.fetchall())
+
+    def close(self) -> None:
+        self._cursor.close()
+
+
+class _LibsqlConnection:
+    """sqlite3-compatible adapter around a libSQL connection."""
+
+    def __init__(self, connection) -> None:
+        self._connection = connection
+
+    def execute(self, sql: str, params=None) -> _CursorAdapter:
+        cursor = (
+            self._connection.execute(sql)
+            if params is None
+            else self._connection.execute(sql, params)
+        )
+        return _CursorAdapter(cursor)
+
+    def executescript(self, script: str) -> "_LibsqlConnection":
+        self._connection.executescript(script)
+        return self
+
+    def cursor(self) -> _CursorAdapter:
+        return _CursorAdapter(self._connection.cursor())
+
+    def commit(self) -> None:
+        self._connection.commit()
+
+    def rollback(self) -> None:
+        self._connection.rollback()
+
+    def close(self) -> None:
+        self._connection.close()
+
+    def __enter__(self) -> "_LibsqlConnection":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        if exc_type is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
+        return False
+
+
+def connect_positions(db_path: str | Path | None = None):
+    """Connection for the monitored-positions store.
+
+    Uses Turso (libSQL remote) when ``TURSO_DATABASE_URL`` + ``TURSO_AUTH_TOKEN``
+    are set, otherwise a local sqlite file (default ``data/positions.sqlite3``).
+    """
+
+    url = os.environ.get("TURSO_DATABASE_URL")
+    token = os.environ.get("TURSO_AUTH_TOKEN")
+    if url and token:
+        import libsql_experimental as libsql
+
+        return _LibsqlConnection(libsql.connect(database=url, auth_token=token))
+    return connect(db_path or DEFAULT_POSITIONS_DB_PATH)
 
 
 def init_db(connection: sqlite3.Connection) -> None:
