@@ -530,6 +530,14 @@ def monitored_position_label_exists(connection: sqlite3.Connection, label: str) 
     return row is not None
 
 
+def delete_monitored_position(connection: sqlite3.Connection, label: str) -> int:
+    """Delete a monitored position by its label. Returns rows deleted (0 or 1)."""
+    cursor = connection.execute(
+        "DELETE FROM monitored_positions WHERE label = ?", (label,)
+    )
+    return int(cursor.rowcount)
+
+
 def table_count(connection: sqlite3.Connection, table_name: str) -> int:
     allowed = {
         "market_prices",
