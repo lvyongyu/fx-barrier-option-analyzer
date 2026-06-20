@@ -1,0 +1,10 @@
+# Runtime dependencies for Streamlit Community Cloud deployment of src/ui.py.
+# (Local dev still uses pyproject.toml: `pip install -e ".[dev,ui]"`.)
+# Keep in sync with pyproject.toml dependencies + the `ui` extra.
+pandas>=2.2
+reportlab>=4.2
+scikit-learn>=1.5
+yfinance>=0.2.51
+libsql-experimental>=0.0.55
+python-dotenv>=1.0
+streamlit>=1.40

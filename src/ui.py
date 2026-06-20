@@ -11,6 +11,7 @@ falls back to the local sqlite file like the CLI does.
 
 from __future__ import annotations
 
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -36,6 +37,17 @@ from src.storage.repository import (
 )
 
 load_dotenv()
+
+# On Streamlit Community Cloud, credentials are provided via the app's secrets
+# manager (st.secrets). Mirror them into the environment so connect_positions()
+# (which reads os.environ) finds them, whether running on Cloud or locally.
+for _key in ("TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN"):
+    if not os.environ.get(_key):
+        try:
+            if _key in st.secrets:
+                os.environ[_key] = str(st.secrets[_key])
+        except Exception:
+            pass
 
 DISPLAY_COLUMNS = [
     "id",
