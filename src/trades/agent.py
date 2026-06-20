@@ -5,7 +5,7 @@ from datetime import date
 import re
 from typing import Any
 
-from src.data_loader import DEFAULT_PAIR, normalize_pair_label
+from src.data.data_loader import DEFAULT_PAIR, normalize_pair_label
 
 
 @dataclass(frozen=True)

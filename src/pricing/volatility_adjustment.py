@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from src.barrier_engine import Trade, calculate_distance_pct, normalize_direction, normalize_prices
-from src.feature_engine import FeatureSnapshot, build_feature_snapshot
+from src.pricing.barrier_engine import Trade, calculate_distance_pct, normalize_direction, normalize_prices
+from src.pricing.feature_engine import FeatureSnapshot, build_feature_snapshot
 
 
 @dataclass(frozen=True)

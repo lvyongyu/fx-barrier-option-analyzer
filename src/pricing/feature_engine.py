@@ -6,7 +6,7 @@ from math import sqrt
 
 import pandas as pd
 
-from src.barrier_engine import Trade, calculate_days_to_expiry, calculate_distance_pct, normalize_prices
+from src.pricing.barrier_engine import Trade, calculate_days_to_expiry, calculate_distance_pct, normalize_prices
 
 
 TRADING_DAYS_PER_YEAR = 252

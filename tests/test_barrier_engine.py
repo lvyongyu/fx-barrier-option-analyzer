@@ -3,7 +3,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from src.barrier_engine import (
+from src.pricing.barrier_engine import (
     Trade,
     calculate_days_to_expiry,
     calculate_distance_pct,

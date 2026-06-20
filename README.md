@@ -35,13 +35,13 @@ The first agent layer is local and deterministic. It does not call an LLM yet.
 Parse a natural-language forecast request:
 
 ```bash
-python -m src.agent_cli parse-request "想预测一下未来3个月audusd是否跌1.5%"
+python -m src.cli.agent_cli parse-request "想预测一下未来3个月audusd是否跌1.5%"
 ```
 
 Review a machine-readable model payload:
 
 ```bash
-python -m src.analyze \
+python -m src.cli.analyze \
   --pair AUD/USD \
   --expiry-date 2026-09-13 \
   --strike 0.704871 \
@@ -49,13 +49,13 @@ python -m src.analyze \
   --barrier-direction down \
   --json > forecast_payload.json
 
-python -m src.agent_cli review-json forecast_payload.json
+python -m src.cli.agent_cli review-json forecast_payload.json
 ```
 
 ## Analyze A Trade
 
 ```bash
-python -m src.analyze \
+python -m src.cli.analyze \
   --pair AUD/USD \
   --trade-date 2026-04-15 \
   --expiry-date 2026-08-28 \
@@ -77,7 +77,7 @@ Use bilateral analysis for questions like:
 Example:
 
 ```bash
-python -m src.bilateral_cli \
+python -m src.cli.bilateral_cli \
   --pair AUD/CNH \
   --period 5y \
   --move-pct 3 \
@@ -114,7 +114,7 @@ Expiry time: 3:00 p.m. Tokyo time
 The current analyzer still requires manual `trade_date` and `spot`, because the screenshot does not show those fields.
 
 ```bash
-python -m src.analyze \
+python -m src.cli.analyze \
   --product-type "Ratio Convertible Forward" \
   --pair AUD/USD \
   --client-direction Importer \
@@ -157,22 +157,22 @@ research store (`data/research.sqlite3`) stays local-only and is gitignored.
 
 ```bash
 # 1. (optional) run a forecast and save research data
-python -m src.analyze --pair AUD/USD --expiry-date 2026-12-30 \
+python -m src.cli.analyze --pair AUD/USD --expiry-date 2026-12-30 \
   --strike 0.7050 --barrier 0.6935 --barrier-direction down \
   --save-db data/research.sqlite3
 
 # 2. register the real trade for monitoring (writes to data/positions.sqlite3)
-python -m src.monitor_cli add \
+python -m src.cli.monitor_cli add \
   --id audusd-06935-down-dec2026 --pair AUD/USD \
   --trade-date 2026-06-01 --spot 0.7050 --strike 0.7050 \
   --barrier 0.6935 --barrier-direction down --expiry-date 2026-12-30 \
   --client-direction Exporter
 
 # 3. list tracked positions and their status
-python -m src.monitor_cli list
+python -m src.cli.monitor_cli list
 
 # 4. check for fresh barrier touches (sends SMS on a new trigger)
-python -m src.monitor_cli check --notify        # add --dry-run to only print
+python -m src.cli.monitor_cli check --notify        # add --dry-run to only print
 ```
 
 A position moves `active -> triggered` (barrier touched) or `active -> expired`
@@ -232,7 +232,7 @@ Confirmation
 The code currently supports manual confirmation mapping with:
 
 ```python
-from src.confirmation import build_uniwell_confirmation_example, barrier_legs_to_trades
+from src.trades.confirmation import build_uniwell_confirmation_example, barrier_legs_to_trades
 ```
 
 It does not yet automatically parse PDFs. Each knockout leg is converted into a per-expiry `Trade` for analysis.
@@ -270,7 +270,7 @@ This compares the current trade against historical samples whose 20-day realized
 By default, the CLI prints a readable summary. Add `--json` if you want the raw structured result:
 
 ```bash
-python -m src.analyze \
+python -m src.cli.analyze \
   --trade-date 2026-04-15 \
   --expiry-date 2026-08-28 \
   --spot 0.6500 \
@@ -284,7 +284,7 @@ python -m src.analyze \
 Use `--report-style forecast` for an institutional-style probability report:
 
 ```bash
-python -m src.analyze \
+python -m src.cli.analyze \
   --product-type "Ratio Convertible Forward" \
   --client-direction Importer \
   --protected-amount 500000 \
@@ -347,7 +347,7 @@ The workflow prints the forecast report in the run log and uploads these artifac
 Add `--save-db` to persist research data into SQLite:
 
 ```bash
-python -m src.analyze \
+python -m src.cli.analyze \
   --product-type "Ratio Convertible Forward" \
   --client-direction Importer \
   --protected-amount 500000 \
@@ -374,7 +374,7 @@ The research database stores:
 Export a price-only training dataset for the future model:
 
 ```bash
-python -m src.analyze \
+python -m src.cli.analyze \
   --product-type "Ratio Convertible Forward" \
   --client-direction Importer \
   --protected-amount 500000 \
@@ -420,7 +420,7 @@ Add `--include-external-features` to download DXY and VIX, print external market
 and train a second experimental model that uses both price features and external features:
 
 ```bash
-python -m src.analyze \
+python -m src.cli.analyze \
   --trade-date 2026-04-15 \
   --expiry-date 2026-12-30 \
   --spot 0.6800 \
@@ -460,7 +460,7 @@ metrics improve on the baseline or explain a clear difference from the price-onl
 Use the evaluation report to compare historical window lengths before trusting any model output:
 
 ```bash
-python -m src.evaluation_report \
+python -m src.cli.evaluation_report \
   --trade-date 2026-04-15 \
   --expiry-date 2026-12-30 \
   --spot 0.6800 \
@@ -488,7 +488,7 @@ touch probability, did similar historical samples actually hit about 40-60% of t
 Generate several AUD/USD trade examples from the latest historical close:
 
 ```bash
-python -m src.sample_trades --period 5y
+python -m src.trades.sample_trades --period 5y
 ```
 
 The suite creates near/medium/far up-barrier and down-barrier examples using recent
@@ -498,7 +498,7 @@ set of scenarios than one long-tenor, near-barrier confirmation example.
 Evaluate the full sample suite:
 
 ```bash
-python -m src.evaluation_report --sample-trades --periods 5y
+python -m src.cli.evaluation_report --sample-trades --periods 5y
 ```
 
 The batch report shows which trade types, if any, have positive model `dBrier`.

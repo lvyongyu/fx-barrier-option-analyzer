@@ -53,7 +53,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ inputs.test_alert }}" = "true" ]; then
-            python -m src.monitor_cli test-alert
+            python -m src.cli.monitor_cli test-alert
             exit 0
           fi
           ARGS=(check --period 2y)
@@ -62,7 +62,7 @@ jobs:
           else
             ARGS+=(--notify)
           fi
-          python -m src.monitor_cli "${ARGS[@]}"
+          python -m src.cli.monitor_cli "${ARGS[@]}"
 
       # State now lives in Turso (no binary DB in git). We commit a text snapshot
       # for backup/audit; it only changes when status/trigger/alert/positions do.
@@ -73,7 +73,7 @@ jobs:
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         shell: bash
         run: |
-          python -m src.monitor_cli export data/positions-snapshot.json
+          python -m src.cli.monitor_cli export data/positions-snapshot.json
           if [[ -n "$(git status --porcelain data/positions-snapshot.json)" ]]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"

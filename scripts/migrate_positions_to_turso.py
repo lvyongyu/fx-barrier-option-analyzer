@@ -21,7 +21,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from src.repository import connect_positions, init_db
+from src.storage.repository import connect_positions, init_db
 
 
 def _target_count(connection) -> int:

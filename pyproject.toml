@@ -17,6 +17,9 @@ dependencies = [
 dev = [
     "pytest>=8.3",
 ]
+ui = [
+    "streamlit>=1.40",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

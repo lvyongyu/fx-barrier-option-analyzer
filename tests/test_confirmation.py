@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from src.confirmation import (
+from src.trades.confirmation import (
     barrier_legs_to_trades,
     build_corpay_screenshot_input_example,
     build_uniwell_confirmation_example,

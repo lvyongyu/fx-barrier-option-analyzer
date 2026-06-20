@@ -5,9 +5,9 @@ from dataclasses import asdict
 from datetime import date, timedelta
 import json
 
-from src.bilateral import calculate_bilateral_touch_probability, format_bilateral_report
-from src.data_loader import DEFAULT_PAIR, download_fx_prices, normalize_pair_label, resolve_market_date_and_spot
-from src.pdf_report import write_pdf_report
+from src.trades.bilateral import calculate_bilateral_touch_probability, format_bilateral_report
+from src.data.data_loader import DEFAULT_PAIR, download_fx_prices, normalize_pair_label, resolve_market_date_and_spot
+from src.reporting.pdf_report import write_pdf_report
 
 
 def parse_args() -> argparse.Namespace:

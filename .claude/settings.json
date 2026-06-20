@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git stash *)",
+      "WebFetch(domain:github.com)",
+      "Bash(git rm *)"
+    ]
+  }
+}

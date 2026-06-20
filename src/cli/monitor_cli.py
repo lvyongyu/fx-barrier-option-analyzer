@@ -6,15 +6,15 @@ committed to git so a scheduled GitHub Actions run persists status back.
 
 Workflow:
   1. Run a forecast and (optionally) save research data:
-         python -m src.analyze --pair AUD/USD --expiry-date ... --save-db data/research.sqlite3
+         python -m src.cli.analyze --pair AUD/USD --expiry-date ... --save-db data/research.sqlite3
   2. Register the real trade for monitoring:
-         python -m src.monitor_cli add --id audusd-06935-down-dec2026 --pair AUD/USD \\
+         python -m src.cli.monitor_cli add --id audusd-06935-down-dec2026 --pair AUD/USD \\
              --trade-date 2026-06-01 --spot 0.7050 --strike 0.7050 \\
              --barrier 0.6935 --barrier-direction down --expiry-date 2026-12-30
   3. Check positions (locally or from GitHub Actions); an email fires on a fresh touch:
-         python -m src.monitor_cli check --notify
+         python -m src.cli.monitor_cli check --notify
   4. Verify the email channel end-to-end any time:
-         python -m src.monitor_cli test-alert
+         python -m src.cli.monitor_cli test-alert
 """
 
 from __future__ import annotations
@@ -26,14 +26,14 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.data_loader import (
+from src.data.data_loader import (
     DEFAULT_INTRADAY_DAYS,
     DEFAULT_INTRADAY_INTERVAL,
     download_fx_prices,
     download_fx_prices_with_intraday,
     normalize_pair_label,
 )
-from src.monitor import (
+from src.monitoring.monitor import (
     build_alert_message,
     check_positions,
     mark_alerted,
@@ -41,8 +41,8 @@ from src.monitor import (
     position_summary_row,
     update_to_dict,
 )
-from src.notifications import NotificationError, any_channel_configured, send_alert
-from src.repository import (
+from src.monitoring.notifications import NotificationError, any_channel_configured, send_alert
+from src.storage.repository import (
     connect_positions,
     init_db,
     load_monitored_positions,

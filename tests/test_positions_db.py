@@ -4,11 +4,11 @@ from datetime import date
 
 import pandas as pd
 
-import src.monitor_cli as monitor_cli
-from src import repository
-from src.repository import _LibsqlConnection, _Row, connect_positions, init_db
-from src.monitor import new_position
-from src.repository import load_monitored_positions, save_monitored_position
+import src.cli.monitor_cli as monitor_cli
+from src.storage import repository
+from src.storage.repository import _LibsqlConnection, _Row, connect_positions, init_db
+from src.monitoring.monitor import new_position
+from src.storage.repository import load_monitored_positions, save_monitored_position
 
 
 # --- libsql row adapter -----------------------------------------------------

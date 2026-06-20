@@ -3,7 +3,7 @@ from datetime import date, timedelta
 import pandas as pd
 import pytest
 
-from src.external_features import build_external_feature_snapshot, normalize_market_series
+from src.data.external_features import build_external_feature_snapshot, normalize_market_series
 
 
 def test_build_external_feature_snapshot_calculates_dxy_and_vix_features() -> None:

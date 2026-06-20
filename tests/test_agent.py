@@ -1,6 +1,6 @@
 from datetime import date
 
-from src.agent import parse_forecast_request, review_forecast_payload
+from src.trades.agent import parse_forecast_request, review_forecast_payload
 
 
 def test_parse_chinese_relative_downside_request() -> None:

@@ -1,6 +1,6 @@
 import pytest
 
-from src.notifications import (
+from src.monitoring.notifications import (
     ENV_ALERT_EMAIL_TO,
     ENV_GMAIL_ADDRESS,
     ENV_GMAIL_APP_PASSWORD,

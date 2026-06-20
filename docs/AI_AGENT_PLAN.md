@@ -78,10 +78,10 @@ Final analyst memo
 
 Implemented:
 
-- `src.agent.parse_forecast_request`
-- `src.agent.review_forecast_payload`
-- `python -m src.agent_cli parse-request`
-- `python -m src.agent_cli review-json`
+- `src.trades.agent.parse_forecast_request`
+- `src.trades.agent.review_forecast_payload`
+- `python -m src.cli.agent_cli parse-request`
+- `python -m src.cli.agent_cli review-json`
 - GitHub Action artifact `agent_review.json`
 - deterministic fallback behavior with no API key or network dependency
 
@@ -430,8 +430,8 @@ It should:
 Add:
 
 ```bash
-python -m src.agent_cli review-report forecast_report.txt
-python -m src.agent_cli parse-request "未来3个月AUD/USD是否跌1.5%"
+python -m src.cli.agent_cli review-report forecast_report.txt
+python -m src.cli.agent_cli parse-request "未来3个月AUD/USD是否跌1.5%"
 ```
 
 ### Step 5: Add GitHub Action mode

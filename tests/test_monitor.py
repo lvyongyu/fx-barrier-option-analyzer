@@ -3,8 +3,8 @@ from datetime import date
 
 import pandas as pd
 
-from src.barrier_engine import Trade
-from src.monitor import (
+from src.pricing.barrier_engine import Trade
+from src.monitoring.monitor import (
     STATUS_ACTIVE,
     STATUS_EXPIRED,
     STATUS_TRIGGERED,
@@ -15,7 +15,7 @@ from src.monitor import (
     new_position,
     position_to_trade,
 )
-from src.repository import (
+from src.storage.repository import (
     init_db,
     load_monitored_positions,
     monitored_position_label_exists,

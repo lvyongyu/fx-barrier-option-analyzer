@@ -5,7 +5,7 @@ from datetime import date
 import json
 from pathlib import Path
 
-from src.agent import dataclass_to_json_dict, parse_forecast_request, review_forecast_payload
+from src.trades.agent import dataclass_to_json_dict, parse_forecast_request, review_forecast_payload
 
 
 def parse_args() -> argparse.Namespace:
@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
     parse_request.add_argument("text", help="natural-language forecast request")
     parse_request.add_argument("--analysis-date", type=date.fromisoformat)
 
-    review_json = subparsers.add_parser("review-json", help="review a JSON payload from src.analyze --json")
+    review_json = subparsers.add_parser("review-json", help="review a JSON payload from src.cli.analyze --json")
     review_json.add_argument("path", help="path to forecast JSON payload")
 
     return parser.parse_args()

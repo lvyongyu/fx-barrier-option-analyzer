@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 import pandas as pd
 
-from src.barrier_engine import calculate_days_to_expiry, normalize_prices
+from src.pricing.barrier_engine import calculate_days_to_expiry, normalize_prices
 
 
 @dataclass(frozen=True)
