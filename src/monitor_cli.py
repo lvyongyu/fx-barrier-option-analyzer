@@ -237,6 +237,30 @@ def cmd_test_alert(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export(args: argparse.Namespace) -> int:
+    """Write a JSON snapshot of all positions for backup/audit.
+
+    The store of record is Turso; this committed text snapshot restores the
+    version history/backup that the binary sqlite-in-git used to provide. The
+    heartbeat field ``last_checked`` is dropped so the snapshot only changes when
+    something meaningful does (status/trigger/alert/new position) — keeping the
+    git history free of daily no-op churn.
+    """
+
+    with connect_positions(args.db) as connection:
+        init_db(connection)
+        positions = load_monitored_positions(connection)
+
+    snapshot = [
+        {key: value for key, value in position.items() if key != "last_checked"}
+        for position in sorted(positions, key=lambda p: str(p["id"]))
+    ]
+    text = json.dumps(snapshot, indent=2, ensure_ascii=False, sort_keys=True, default=str)
+    Path(args.path).write_text(text + "\n", encoding="utf-8")
+    print(f"Exported {len(snapshot)} position(s) -> {args.path}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Monitor real barrier positions and alert on touches.")
     parser.add_argument(
@@ -302,6 +326,15 @@ def build_parser() -> argparse.ArgumentParser:
     test = sub.add_parser("test-alert", help="send a one-off test email to verify the alert channel")
     test.add_argument("--dry-run", action="store_true", help="format only, do not send")
     test.set_defaults(func=cmd_test_alert)
+
+    export = sub.add_parser("export", help="write a JSON snapshot of positions (backup/audit)")
+    export.add_argument(
+        "path",
+        nargs="?",
+        default="data/positions-snapshot.json",
+        help="output JSON path (default: data/positions-snapshot.json)",
+    )
+    export.set_defaults(func=cmd_export)
 
     return parser
 

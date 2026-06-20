@@ -48,13 +48,15 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         shell: bash
         run: |
           if [ "${{ inputs.test_alert }}" = "true" ]; then
             python -m src.monitor_cli test-alert
             exit 0
           fi
-          ARGS=(--db data/positions.sqlite3 check --period 2y)
+          ARGS=(check --period 2y)
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             ARGS+=(--dry-run)
           else
@@ -62,16 +64,22 @@ jobs:
           fi
           python -m src.monitor_cli "${ARGS[@]}"
 
-      - name: Commit status changes
+      # State now lives in Turso (no binary DB in git). We commit a text snapshot
+      # for backup/audit; it only changes when status/trigger/alert/positions do.
+      - name: Back up positions snapshot
         if: ${{ inputs.dry_run != 'true' && inputs.test_alert != 'true' }}
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         shell: bash
         run: |
-          if [[ -n "$(git status --porcelain data/positions.sqlite3)" ]]; then
+          python -m src.monitor_cli export data/positions-snapshot.json
+          if [[ -n "$(git status --porcelain data/positions-snapshot.json)" ]]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/positions.sqlite3
-            git commit -m "Update barrier position status [skip ci]"
+            git add data/positions-snapshot.json
+            git commit -m "Update positions snapshot [skip ci]"
             git push
           else
-            echo "No position status changes to commit."
+            echo "No position changes to snapshot."
           fi
