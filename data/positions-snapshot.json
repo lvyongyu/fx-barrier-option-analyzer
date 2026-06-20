@@ -85,7 +85,7 @@
     "triggered_price": null
   },
   {
-    "alert_sent_at": null,
+    "alert_sent_at": "2026-06-20T22:20:40+00:00",
     "barrier": 0.6995,
     "barrier_direction": "down",
     "client_direction": "Importer",
