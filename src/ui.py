@@ -11,7 +11,14 @@ falls back to the local sqlite file like the CLI does.
 
 from __future__ import annotations
 
+import sys
 from datetime import date
+from pathlib import Path
+
+# `streamlit run src/ui.py` puts src/ on sys.path (not the repo root), so the
+# `src` package isn't importable. Add the repo root so the app works however
+# it's launched.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd
 import streamlit as st
