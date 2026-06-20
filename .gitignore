@@ -6,6 +6,10 @@ __pycache__/
 .DS_Store
 reports/
 
+# Local secrets (Turso credentials etc.) — never commit. Use .env.example as a template.
+.env
+.env.local
+
 # Research store is local-only and can grow large; the dedicated positions DB
 # (data/positions.sqlite3) IS tracked so the monitor workflow can persist status.
 data/research.sqlite3
@@ -13,3 +17,8 @@ data/research.sqlite3
 # Real trade confirmations archive (original PDFs/screenshots + structured
 # records). Holds sensitive executed prices/amounts; local-only, never pushed.
 data/trades/
+
+# Sales / client-facing one-pager. Local-only, not part of the codebase.
+docs/敲出结构与监控平台-一页纸.md
+job-search/interview-prep.md
+job-search/resume_ai.md

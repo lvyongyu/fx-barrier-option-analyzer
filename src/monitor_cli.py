@@ -43,7 +43,7 @@ from src.monitor import (
 )
 from src.notifications import NotificationError, any_channel_configured, send_alert
 from src.repository import (
-    connect,
+    connect_positions,
     init_db,
     load_monitored_positions,
     monitored_position_label_exists,
@@ -81,7 +81,7 @@ def _make_price_loader(
 
 
 def cmd_add(args: argparse.Namespace) -> int:
-    with connect(args.db) as connection:
+    with connect_positions(args.db) as connection:
         init_db(connection)
         if monitored_position_label_exists(connection, args.id):
             raise SystemExit(f"position id already exists: {args.id}")
@@ -105,7 +105,7 @@ def cmd_add(args: argparse.Namespace) -> int:
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-    with connect(args.db) as connection:
+    with connect_positions(args.db) as connection:
         init_db(connection)
         positions = load_monitored_positions(connection)
     rows = [position_summary_row(p) for p in positions]
@@ -138,7 +138,7 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    with connect(args.db) as connection:
+    with connect_positions(args.db) as connection:
         init_db(connection)
         positions = load_monitored_positions(connection)
         if not positions:
@@ -186,7 +186,10 @@ def cmd_check(args: argparse.Namespace) -> int:
                     mark_alerted(data, update.position_id, now_iso)
                 print(f"  (dry-run) would {result.channel} to {result.recipient}")
 
-        if not args.no_write:
+        # A dry-run must never mutate the store (it is a preview), unless the
+        # caller explicitly opts in via --mark-dry-run-alerted.
+        should_write = not args.no_write and (not args.dry_run or args.mark_dry_run_alerted)
+        if should_write:
             for position in data["positions"]:
                 update_monitored_position_state(connection, position)
             connection.commit()
@@ -281,7 +284,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check.add_argument("--as-of", type=date.fromisoformat, help="override 'today' (testing/backfill)")
     check.add_argument("--notify", action="store_true", help="actually send the email alert on fresh triggers")
-    check.add_argument("--dry-run", action="store_true", help="never send email, only print")
+    check.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="preview only: never send email AND never write to the DB "
+        "(unless --mark-dry-run-alerted)",
+    )
     check.add_argument("--no-write", action="store_true", help="do not persist status back to the DB")
     check.add_argument(
         "--mark-dry-run-alerted",
@@ -299,6 +307,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Load Turso (and any) credentials from a local .env when present. In CI the
+    # real environment variables are set directly, so this is a harmless no-op.
+    from dotenv import load_dotenv
+
+    load_dotenv()
     args = build_parser().parse_args(argv)
     return args.func(args)
 
