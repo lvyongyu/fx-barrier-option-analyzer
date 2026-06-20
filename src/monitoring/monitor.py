@@ -1,6 +1,6 @@
 """Live monitoring logic for real barrier-option positions.
 
-Persistence lives in the SQLite store (``src.repository.monitored_positions``);
+Persistence lives in the SQLite store (``src.storage.repository.monitored_positions``);
 this module holds only the pure logic so it stays testable without a database.
 A *position* is a plain dict (the shape returned by
 ``repository.load_monitored_positions``) keyed by ``id`` (the unique label).
@@ -18,7 +18,7 @@ from typing import Callable
 
 import pandas as pd
 
-from src.barrier_engine import Trade, normalize_direction, normalize_prices
+from src.pricing.barrier_engine import Trade, normalize_direction, normalize_prices
 
 
 # Position lifecycle.

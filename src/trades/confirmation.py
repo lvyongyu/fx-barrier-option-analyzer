@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from src.barrier_engine import Trade
+from src.pricing.barrier_engine import Trade
 
 
 @dataclass(frozen=True)

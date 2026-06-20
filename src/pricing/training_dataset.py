@@ -5,9 +5,9 @@ from datetime import date
 
 import pandas as pd
 
-from src.barrier_engine import Trade, calculate_distance_pct, normalize_direction, normalize_prices
-from src.external_features import build_external_feature_snapshot
-from src.feature_engine import build_feature_snapshot
+from src.pricing.barrier_engine import Trade, calculate_distance_pct, normalize_direction, normalize_prices
+from src.data.external_features import build_external_feature_snapshot
+from src.pricing.feature_engine import build_feature_snapshot
 
 
 TARGET_COLUMN = "target_barrier_hit"

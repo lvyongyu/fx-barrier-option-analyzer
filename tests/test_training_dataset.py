@@ -2,8 +2,8 @@ from datetime import date, timedelta
 
 import pandas as pd
 
-from src.barrier_engine import Trade
-from src.training_dataset import (
+from src.pricing.barrier_engine import Trade
+from src.pricing.training_dataset import (
     TARGET_COLUMN,
     build_price_only_training_dataset,
     build_price_plus_external_training_dataset,

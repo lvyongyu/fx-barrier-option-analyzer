@@ -3,7 +3,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from src.data_loader import (
+from src.data.data_loader import (
     aggregate_intraday_to_daily,
     build_cross_rate_prices,
     normalize_pair_label,

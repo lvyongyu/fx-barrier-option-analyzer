@@ -1,4 +1,4 @@
-from src.pdf_report import write_pdf_report
+from src.reporting.pdf_report import write_pdf_report
 
 
 def test_write_pdf_report_creates_pdf_file(tmp_path) -> None:

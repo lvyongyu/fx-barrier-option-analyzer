@@ -2,9 +2,9 @@ from datetime import date, timedelta
 
 import pandas as pd
 
-from src.barrier_engine import Trade, calculate_touch_probability
-from src.feature_engine import build_feature_snapshot
-from src.repository import (
+from src.pricing.barrier_engine import Trade, calculate_touch_probability
+from src.pricing.feature_engine import build_feature_snapshot
+from src.storage.repository import (
     init_db,
     load_market_prices,
     save_analysis_result,
@@ -14,7 +14,7 @@ from src.repository import (
     table_count,
     upsert_market_prices,
 )
-from src.volatility_adjustment import calculate_volatility_adjusted_probability
+from src.pricing.volatility_adjustment import calculate_volatility_adjusted_probability
 
 
 def test_repository_persists_research_objects() -> None:

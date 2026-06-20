@@ -17,9 +17,9 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-from src.data_loader import normalize_pair_label
-from src.monitor import new_position
-from src.repository import (
+from src.data.data_loader import normalize_pair_label
+from src.monitoring.monitor import new_position
+from src.storage.repository import (
     connect_positions,
     delete_monitored_position,
     init_db,

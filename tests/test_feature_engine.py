@@ -3,8 +3,8 @@ from datetime import date, timedelta
 import pandas as pd
 import pytest
 
-from src.barrier_engine import Trade
-from src.feature_engine import build_feature_snapshot, build_historical_feature_snapshots
+from src.pricing.barrier_engine import Trade
+from src.pricing.feature_engine import build_feature_snapshot, build_historical_feature_snapshots
 
 
 def test_build_feature_snapshot_calculates_price_features() -> None:

@@ -7,8 +7,8 @@ import json
 
 import pandas as pd
 
-from src.barrier_engine import Trade, calculate_touch_probability, normalize_prices
-from src.data_loader import download_audusd_prices
+from src.pricing.barrier_engine import Trade, calculate_touch_probability, normalize_prices
+from src.data.data_loader import download_audusd_prices
 
 
 @dataclass(frozen=True)

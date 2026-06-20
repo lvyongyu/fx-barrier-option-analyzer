@@ -3,7 +3,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from src.bilateral import calculate_bilateral_touch_probability, format_bilateral_report
+from src.trades.bilateral import calculate_bilateral_touch_probability, format_bilateral_report
 
 
 def test_bilateral_touch_probability_counts_upper_lower_either_and_both() -> None:

@@ -77,9 +77,9 @@ jobs:
             ARGS+=(--spot "${{ inputs.spot }}")
           fi
 
-          python -m src.analyze "${ARGS[@]}" --pdf forecast_report.pdf | tee forecast_report.txt
-          python -m src.analyze "${ARGS[@]}" --json > forecast_payload.json
-          python -m src.agent_cli review-json forecast_payload.json > agent_review.json
+          python -m src.cli.analyze "${ARGS[@]}" --pdf forecast_report.pdf | tee forecast_report.txt
+          python -m src.cli.analyze "${ARGS[@]}" --json > forecast_payload.json
+          python -m src.cli.agent_cli review-json forecast_payload.json > agent_review.json
 
       - name: Upload forecast artifacts
         uses: actions/upload-artifact@v4

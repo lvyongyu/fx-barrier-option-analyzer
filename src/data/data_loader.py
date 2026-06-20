@@ -5,7 +5,7 @@ from datetime import date
 import pandas as pd
 import yfinance as yf
 
-from src.barrier_engine import normalize_prices
+from src.pricing.barrier_engine import normalize_prices
 
 
 AUDUSD_YAHOO_TICKER = "AUDUSD=X"

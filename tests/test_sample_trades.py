@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 import pandas as pd
 
-from src.sample_trades import build_sample_trade_examples, format_sample_trade_report
+from src.trades.sample_trades import build_sample_trade_examples, format_sample_trade_report
 
 
 def test_build_sample_trade_examples_creates_up_and_down_scenarios() -> None:

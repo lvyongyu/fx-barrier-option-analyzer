@@ -8,7 +8,7 @@ from sklearn.metrics import brier_score_loss, log_loss
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from src.training_dataset import TARGET_COLUMN, price_only_feature_columns, price_plus_external_feature_columns
+from src.pricing.training_dataset import TARGET_COLUMN, price_only_feature_columns, price_plus_external_feature_columns
 
 
 @dataclass(frozen=True)

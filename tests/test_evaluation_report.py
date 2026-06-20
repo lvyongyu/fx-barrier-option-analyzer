@@ -1,11 +1,11 @@
-from src.barrier_theory import BarrierTheoryEvaluation, BarrierTheorySnapshot
-from src.evaluation_report import (
+from src.pricing.barrier_theory import BarrierTheoryEvaluation, BarrierTheorySnapshot
+from src.cli.evaluation_report import (
     PeriodEvaluation,
     SampleTradeEvaluation,
     format_evaluation_report,
     format_sample_trade_evaluation_report,
 )
-from src.price_model import CalibrationBucket, PriceModelEvaluation
+from src.pricing.price_model import CalibrationBucket, PriceModelEvaluation
 
 
 def test_format_evaluation_report_includes_summary_and_calibration() -> None:

@@ -3,9 +3,9 @@ from datetime import date, timedelta
 import pandas as pd
 import pytest
 
-from src.barrier_engine import Trade, calculate_touch_probability
-from src.feature_engine import build_feature_snapshot
-from src.volatility_adjustment import (
+from src.pricing.barrier_engine import Trade, calculate_touch_probability
+from src.pricing.feature_engine import build_feature_snapshot
+from src.pricing.volatility_adjustment import (
     build_labeled_volatility_samples,
     calculate_volatility_adjusted_probability,
     percentile_rank,

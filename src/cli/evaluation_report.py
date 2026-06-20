@@ -5,15 +5,15 @@ from dataclasses import asdict, dataclass
 from datetime import date
 import json
 
-from src.barrier_theory import BarrierTheoryEvaluation, evaluate_barrier_theory_model
-from src.barrier_engine import Trade, calculate_touch_probability
-from src.data_loader import download_audusd_prices
-from src.external_features import build_external_feature_snapshot, download_external_market_data
-from src.feature_engine import build_feature_snapshot
-from src.price_model import PriceModelEvaluation, evaluate_price_only_model, evaluate_price_plus_external_model
-from src.sample_trades import build_sample_trade_examples
-from src.training_dataset import build_price_only_training_dataset, build_price_plus_external_training_dataset
-from src.volatility_adjustment import calculate_volatility_adjusted_probability
+from src.pricing.barrier_theory import BarrierTheoryEvaluation, evaluate_barrier_theory_model
+from src.pricing.barrier_engine import Trade, calculate_touch_probability
+from src.data.data_loader import download_audusd_prices
+from src.data.external_features import build_external_feature_snapshot, download_external_market_data
+from src.pricing.feature_engine import build_feature_snapshot
+from src.pricing.price_model import PriceModelEvaluation, evaluate_price_only_model, evaluate_price_plus_external_model
+from src.trades.sample_trades import build_sample_trade_examples
+from src.pricing.training_dataset import build_price_only_training_dataset, build_price_plus_external_training_dataset
+from src.pricing.volatility_adjustment import calculate_volatility_adjusted_probability
 
 
 @dataclass(frozen=True)

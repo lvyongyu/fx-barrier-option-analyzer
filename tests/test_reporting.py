@@ -1,10 +1,10 @@
 from datetime import date
 
-from src.barrier_theory import BarrierTheoryEvaluation, BarrierTheorySnapshot
-from src.barrier_engine import BarrierPathResult, TouchProbabilityResult
-from src.external_features import ExternalFeatureSnapshot
-from src.price_model import PriceModelEvaluation
-from src.reporting import format_forecast_report, format_summary
+from src.pricing.barrier_theory import BarrierTheoryEvaluation, BarrierTheorySnapshot
+from src.pricing.barrier_engine import BarrierPathResult, TouchProbabilityResult
+from src.data.external_features import ExternalFeatureSnapshot
+from src.pricing.price_model import PriceModelEvaluation
+from src.reporting.reporting import format_forecast_report, format_summary
 
 
 def test_format_summary_marks_actual_path_not_applicable() -> None:

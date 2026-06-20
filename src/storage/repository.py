@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.barrier_engine import Trade, TouchProbabilityResult, normalize_prices
-from src.feature_engine import FeatureSnapshot
-from src.volatility_adjustment import VolatilityAdjustedResult
+from src.pricing.barrier_engine import Trade, TouchProbabilityResult, normalize_prices
+from src.pricing.feature_engine import FeatureSnapshot
+from src.pricing.volatility_adjustment import VolatilityAdjustedResult
 
 
 DEFAULT_DB_PATH = Path("data/research.sqlite3")
@@ -430,9 +430,9 @@ def save_volatility_adjustment(
 
 # --- Live monitored positions ------------------------------------------------
 #
-# These rows are the source of truth for real-trade monitoring (see src.monitor).
+# These rows are the source of truth for real-trade monitoring (see src.monitoring.monitor).
 # A position dict uses "id" for the unique label so it round-trips with the pure
-# logic in src.monitor; the DB stores it in the `label` column.
+# logic in src.monitoring.monitor; the DB stores it in the `label` column.
 
 _MONITORED_POSITION_FIELDS = (
     "pair",

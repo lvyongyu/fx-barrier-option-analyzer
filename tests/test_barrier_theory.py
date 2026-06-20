@@ -3,15 +3,15 @@ from datetime import date, timedelta
 import pandas as pd
 import pytest
 
-from src.barrier_engine import Trade
-from src.barrier_theory import (
+from src.pricing.barrier_engine import Trade
+from src.pricing.barrier_theory import (
     calculate_gbm_touch_probability,
     distance_in_vol_units,
     evaluate_barrier_theory_model,
     expected_move_pct,
 )
-from src.feature_engine import build_feature_snapshot
-from src.training_dataset import build_price_only_training_dataset
+from src.pricing.feature_engine import build_feature_snapshot
+from src.pricing.training_dataset import build_price_only_training_dataset
 
 
 def test_gbm_touch_probability_increases_with_volatility() -> None:

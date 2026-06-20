@@ -6,8 +6,8 @@ from math import erf, log, sqrt
 import pandas as pd
 from sklearn.metrics import brier_score_loss
 
-from src.price_model import CalibrationBucket, calculate_calibration_buckets
-from src.training_dataset import TARGET_COLUMN
+from src.pricing.price_model import CalibrationBucket, calculate_calibration_buckets
+from src.pricing.training_dataset import TARGET_COLUMN
 
 
 TRADING_DAYS_PER_YEAR = 252
