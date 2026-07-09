@@ -146,7 +146,7 @@
     "pair": "AUD/CNH",
     "product_type": "Knock-Out Ratio Forward",
     "spot": 4.795,
-    "status": "active",
+    "status": "expired",
     "strike": 4.681,
     "trade_date": "2026-03-26",
     "triggered_date": null,
