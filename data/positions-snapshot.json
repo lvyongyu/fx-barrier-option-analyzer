@@ -1,6 +1,6 @@
 [
   {
-    "alert_sent_at": null,
+    "alert_sent_at": "2026-07-14T22:10:18+00:00",
     "barrier": 0.699,
     "barrier_direction": "up",
     "client_direction": "Exporter",
@@ -10,11 +10,11 @@
     "pair": "AUD/USD",
     "product_type": "Ratio Convertible Forward",
     "spot": 0.6915,
-    "status": "active",
+    "status": "triggered",
     "strike": 0.713,
     "trade_date": "2026-06-24",
-    "triggered_date": null,
-    "triggered_price": null
+    "triggered_date": "2026-07-14",
+    "triggered_price": 0.6994474530220032
   },
   {
     "alert_sent_at": null,
@@ -340,7 +340,7 @@
     "triggered_price": 0.7059404850006104
   },
   {
-    "alert_sent_at": null,
+    "alert_sent_at": "2026-07-14T22:10:18+00:00",
     "barrier": 0.699,
     "barrier_direction": "up",
     "client_direction": "Exporter",
@@ -350,11 +350,11 @@
     "pair": "AUD/USD",
     "product_type": "Ratio Convertible Forward",
     "spot": 0.6915,
-    "status": "active",
+    "status": "triggered",
     "strike": 0.713,
     "trade_date": "2026-06-24",
-    "triggered_date": null,
-    "triggered_price": null
+    "triggered_date": "2026-07-14",
+    "triggered_price": 0.6994474530220032
   },
   {
     "alert_sent_at": null,
