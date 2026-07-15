@@ -17,7 +17,7 @@
     "triggered_price": 0.6994474530220032
   },
   {
-    "alert_sent_at": null,
+    "alert_sent_at": "2026-07-15T22:10:51+00:00",
     "barrier": 4.7385,
     "barrier_direction": "up",
     "client_direction": "Exporter",
@@ -27,11 +27,11 @@
     "pair": "AUD/CNH",
     "product_type": "Ratio Convertible Forward",
     "spot": 4.701,
-    "status": "active",
+    "status": "triggered",
     "strike": 4.775,
     "trade_date": "2026-06-24",
-    "triggered_date": null,
-    "triggered_price": null
+    "triggered_date": "2026-07-15",
+    "triggered_price": 4.744999885559082
   },
   {
     "alert_sent_at": null,
@@ -357,7 +357,7 @@
     "triggered_price": 0.6994474530220032
   },
   {
-    "alert_sent_at": null,
+    "alert_sent_at": "2026-07-15T22:10:51+00:00",
     "barrier": 0.7,
     "barrier_direction": "up",
     "client_direction": "Exporter",
@@ -367,14 +367,14 @@
     "pair": "AUD/USD",
     "product_type": "Ratio Convertible Forward",
     "spot": 0.689,
-    "status": "active",
+    "status": "triggered",
     "strike": 0.7,
     "trade_date": "2026-07-02",
-    "triggered_date": null,
-    "triggered_price": null
+    "triggered_date": "2026-07-15",
+    "triggered_price": 0.7022964954376221
   },
   {
-    "alert_sent_at": null,
+    "alert_sent_at": "2026-07-15T22:10:51+00:00",
     "barrier": 0.7,
     "barrier_direction": "up",
     "client_direction": "Exporter",
@@ -384,14 +384,14 @@
     "pair": "AUD/USD",
     "product_type": "Ratio Convertible Forward",
     "spot": 0.689,
-    "status": "active",
+    "status": "triggered",
     "strike": 0.7,
     "trade_date": "2026-07-02",
-    "triggered_date": null,
-    "triggered_price": null
+    "triggered_date": "2026-07-15",
+    "triggered_price": 0.7022964954376221
   },
   {
-    "alert_sent_at": null,
+    "alert_sent_at": "2026-07-15T22:10:51+00:00",
     "barrier": 0.7,
     "barrier_direction": "up",
     "client_direction": "Exporter",
@@ -401,11 +401,11 @@
     "pair": "AUD/USD",
     "product_type": "Ratio Convertible Forward",
     "spot": 0.689,
-    "status": "active",
+    "status": "triggered",
     "strike": 0.7,
     "trade_date": "2026-07-02",
-    "triggered_date": null,
-    "triggered_price": null
+    "triggered_date": "2026-07-15",
+    "triggered_price": 0.7022964954376221
   },
   {
     "alert_sent_at": "2026-06-30T22:36:37+00:00",
