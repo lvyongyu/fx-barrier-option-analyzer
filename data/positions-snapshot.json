@@ -34,7 +34,7 @@
     "triggered_price": 4.744999885559082
   },
   {
-    "alert_sent_at": null,
+    "alert_sent_at": "2026-08-21T21:35:32+00:00",
     "barrier": 4.82,
     "barrier_direction": "up",
     "client_direction": "Exporter",
@@ -44,11 +44,11 @@
     "pair": "AUD/CNH",
     "product_type": "Ratio Convertible Forward",
     "spot": 4.7835,
-    "status": "active",
+    "status": "triggered",
     "strike": 4.86,
     "trade_date": "2026-06-09",
-    "triggered_date": null,
-    "triggered_price": null
+    "triggered_date": "2026-08-21",
+    "triggered_price": 4.820199966430664
   },
   {
     "alert_sent_at": "2026-06-29T22:19:00+00:00",
