@@ -95,7 +95,7 @@
     "pair": "AUD/CNH",
     "product_type": "Ratio Convertible Forward",
     "spot": 4.834,
-    "status": "active",
+    "status": "expired",
     "strike": 4.905,
     "trade_date": "2026-05-28",
     "triggered_date": null,
